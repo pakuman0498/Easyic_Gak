@@ -1515,7 +1515,7 @@ function showSettings(){
  const N='Notification' in window;
  const np=!N?_('이 브라우저는 알림을 지원하지 않아요','not supported here'):Notification.permission==='granted'?_('알림 권한 허용됨','allowed'):Notification.permission==='denied'?_('브라우저에서 알림이 막혀 있어요','blocked by the browser'):_('켜면 알림 권한을 물어봐요','will ask for permission');
  const seg=(key,list)=>`<div class="seg">${list.map(([v,l])=>`<button data-opt="${key}:${v}" class="${String(OPT[key])===String(v)?'on':''}">${l}</button>`).join('')}</div>`;
- let h=sheetHd(_('설정','Settings'),_('이직각','Ijikgak'));
+ let h=sheetHd(_('설정','Settings'),_('이직각','Easyic-Gak'));
  h+=`<div class="sec"><div class="label"><span>${_('앱을 닫거나 다른 앱으로 가면','When you leave the app')}</span></div>${seg('bg',[[1,_('계속 진행','Keep going')],[0,_('멈춤','Pause')]])}</div>`;
  if(OPT.bg)h+=`<div class="sec"><div class="label"><span>${_('백그라운드 속도','Background speed')}</span><span>${_('1×는 하루 1분','1× = 1 min per day')}</span></div>${seg('bgSp',[[1,'1×'],[2,'3×'],[3,'6×'],[4,'10×'],[5,'20×']])}</div>
  <div class="sec"><div class="label"><span>${_('중요 메일이 오면','On important mail')}</span><span>${_('결과·면접·오퍼·인사·청구','results, interviews, offers, HR, bills')}</span></div>${seg('pauseImp',[[1,_('멈추고 기다리기','Pause and wait')],[0,_('계속 진행','Keep going')]])}</div>`;
@@ -1545,7 +1545,7 @@ function showIntro(){
  UI.pickTrack=UI.pickTrack||'dev';
  el.innerHTML=`<div class="intro-in">
   <div class="langsw" role="group" aria-label="Language"><button data-lang="ko" class="${EN?'':'on'}">한국어</button><button data-lang="en" class="${EN?'on':''}">English</button></div>
-  <div><div class="logo">이직<span>각</span></div>${EN?'<div class="sub" style="margin-top:4px">Ijikgak · "time to switch jobs"</div>':''}<p class="tag">${_('신입 공고 하나 뚫는 데서 시작해, 회사를 옮겨 다니며 커리어 꼭대기까지 가는 이직 시뮬레이션.','A job-hopping sim: start by landing one entry-level job, then switch companies all the way to the top of your career.')}</p></div>
+  <div><div class="logo">이직<span>각</span></div>${EN?'<div class="sub" style="margin-top:4px">Easyic-Gak · "time to switch jobs"</div>':''}<p class="tag">${_('신입 공고 하나 뚫는 데서 시작해, 회사를 옮겨 다니며 커리어 꼭대기까지 가는 이직 시뮬레이션.','A job-hopping sim: start by landing one entry-level job, then switch companies all the way to the top of your career.')}</p></div>
   ${endRec()}
   ${saved&&saved.v===1?`<button class="btn block" data-continue>${_('이어하기','Continue')} · ${esc(saved.name)} (${fmtD(saved.day)})${(saved.lang||'ko')!==LANG?((saved.lang||'ko')==='en'?' · English':' · 한국어'):''}</button>`:''}
   <div class="field"><label class="label" for="nm">${_('이름','Name')}</label><input id="nm" maxlength="${EN?12:8}" placeholder="${_('예: 김구직','e.g. Jamie')}" value="${esc(UI.nm||'')}"></div>
@@ -1616,7 +1616,7 @@ document.addEventListener('keydown',e=>{
 /* ---------- tutorial ---------- */
 // each step spotlights a real element; "wait" steps advance only when the player does the thing
 const TUT_EN=[
- {h:'Welcome to Ijikgak',b:'You start by landing one entry-level job\nand climb all the way to the top of Global Big Tech.\n\nThis takes about a minute.\nGame time is paused during the tutorial.',next:'Let\'s go'},
+ {h:'Welcome to Easyic-Gak',b:'You start by landing one entry-level job\nand climb all the way to the top of Global Big Tech.\n\nThis takes about a minute.\nGame time is paused during the tutorial.',next:'Let\'s go'},
  {t:'.timebar',h:'Time controls',b:'At 1×, one in-game day is one real minute.\nSpeed up while you wait; use the round button to pause when you need to think.'},
  {t:'.gauges',h:'HP and bank',b:'Working drains HP, and living costs leave every month.\nHit 0 HP and you\'re forced on leave; stay broke too long and the game ends.'},
  {t:'#tabs [data-tab="board"]',h:'Find a job',b:'Job postings live in the Offero tab.',wait:'tab:board',do:'Tap the Offero tab'},
@@ -1731,7 +1731,7 @@ function sky(){
  sk.setProperty('--gx',(8+84*q).toFixed(1)+'%');sk.setProperty('--gy',(62-Math.sin(Math.PI*q)*40).toFixed(1)+'%');sk.setProperty('--gc',c);sk.setProperty('--gr',r);
 }
 if(location.hostname==='localhost')window.__ijik={S:()=>S,tick:n=>{for(let i=0;i<n;i++)tick();render();}};
-(function(){if(!EN)return;document.title='Ijikgak';
+(function(){if(!EN)return;document.title='Easyic-Gak';
  const tl={home:'Home',board:'Offero',mail:'Mail',me:'Career'};
  document.querySelectorAll('#tabs button').forEach(b=>{const n=[...b.childNodes].find(x=>x.nodeType===3&&x.textContent.trim());if(n)n.textContent=tl[b.dataset.tab];});
  const sp=document.querySelectorAll('.hp>span');if(sp[0])sp[0].textContent='HP';if(sp[1])sp[1].textContent='Bank';
