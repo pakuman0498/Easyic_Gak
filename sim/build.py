@@ -12,7 +12,8 @@ rep("setTimeout(showBranch,50)", "0")
 rep("setTimeout(showEnding,600)", "0")
 rep("function celebrate(a,prev){", "function celebrate(a,prev){return;")
 rep("document.addEventListener('visibilitychange',onVis);", "")
-rep("showIntro();\nsetInterval(loop,100);",
+rep("setInterval(loop,100);", "")
+rep("showIntro();\n",
     "window.G={get S(){return S},set S(v){S=v},UI,newGame,submitApp,tick,runDue,acceptOffer,startAct,calcPower,req,plevel,yrs,myKws,co,proj,appById,endJob,hidden,hops,maxTier,openMail,closeSheet,openInterview,answer,endInterview,CULT,CULT_REV,QS,T,TR,REQY,sig,clamp,nid,sched,RI,log,payBill,gradeOf};")
 src = src.replace("</body>", '<script src="bot.js"></script>\n</body>')
 open(os.path.join(here, 'sim.html'), 'w', encoding='utf-8').write(src)

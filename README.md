@@ -2,6 +2,8 @@
 
 신입 공고 하나 뚫는 데서 시작해, 회사를 옮겨 다니며 글로벌 빅테크 꼭대기까지 가는 이직 시뮬레이션 게임입니다. AI(Claude)와 함께 만든 1인 개발 실험작이에요.
 
+A job-hopping sim: land one entry-level job, then switch companies all the way to the top of Global Big Tech. A solo experiment made together with AI (Claude). Korean and English are supported; pick the language on the title screen.
+
 ## 플레이
 
 `ijikgak.html` 파일 하나가 게임 전체입니다. 브라우저로 열면 바로 플레이할 수 있어요. 진행 상황은 브라우저에 저장됩니다.

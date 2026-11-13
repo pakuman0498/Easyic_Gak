@@ -2,3 +2,8 @@
 sim/sim.html
 # local test copy with internals exposed
 sim/test.html
+
+# local preview config
+.claude/
+# itch.io upload build
+dist/
