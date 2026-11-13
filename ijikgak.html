@@ -1,0 +1,1590 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>이직각</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=IBM+Plex+Mono:wght@500;600&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one phone-width column — status header, scrolling feed, bottom tab bar; sheets slide up from the bottom like a real job app. */
+:root{
+  --bg:#e9edf2; --surface:#ffffff; --sunk:#f3f5f8; --ink:#141b2d; --muted:#667089; --line:#d6dce6;
+  --accent:#2445d4; --accent-ink:#ffffff; --accent-soft:#e3e8fc;
+  --mail:#c98a00; --mail-soft:#fbf0d4;
+  --good:#16895c; --good-soft:#dcf2e8; --bad:#c93b35; --bad-soft:#f8e0de; --warn:#b86a00;
+  --shadow:0 1px 2px rgba(20,27,45,.06),0 6px 20px rgba(20,27,45,.06);
+  --f-display:"Do Hyeon","IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif;
+  --f-num:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0d121d; --surface:#161d2c; --sunk:#111827; --ink:#e7ebf3; --muted:#8e99b1; --line:#283149;
+  --accent:#7f95ff; --accent-ink:#0d121d; --accent-soft:#1f2a4d;
+  --mail:#f2c14a; --mail-soft:#3a3016;
+  --good:#3cc58d; --good-soft:#143428; --bad:#ff6d64; --bad-soft:#3d1a1a; --warn:#f0a43a;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25);
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0d121d; --surface:#161d2c; --sunk:#111827; --ink:#e7ebf3; --muted:#8e99b1; --line:#283149;
+  --accent:#7f95ff; --accent-ink:#0d121d; --accent-soft:#1f2a4d;
+  --mail:#f2c14a; --mail-soft:#3a3016;
+  --good:#3cc58d; --good-soft:#143428; --bad:#ff6d64; --bad-soft:#3d1a1a; --warn:#f0a43a;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.5;-webkit-tap-highlight-color:transparent;overflow:hidden}
+[hidden]{display:none!important}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;text-align:inherit}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+
+.app{max-width:460px;height:100%;margin:0 auto;display:flex;flex-direction:column;position:relative;background:var(--bg);border-inline:1px solid var(--line)}
+/* sky: the feed background follows the in-game clock (dawn → noon → sunset → night); cards stay opaque so text contrast never changes */
+.app{background:linear-gradient(180deg,var(--sky1,var(--bg)) 0%,var(--sky2,var(--bg)) 70%)}
+.sky{position:absolute;inset:0;pointer-events:none;z-index:0;background:radial-gradient(circle at var(--gx,50%) var(--gy,30%),var(--gc,transparent) 0,transparent var(--gr,34%))}
+.app>header,.app>main,.app>nav{position:relative;z-index:1}
+main{background:transparent}
+.app>header.hd{background:color-mix(in srgb,var(--surface) 62%,var(--sky1,var(--surface)))}
+.gut{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* header */
+.hd{background:var(--surface);border-bottom:1px solid var(--line);padding-top:calc(env(safe-area-inset-top,0px) + 10px);padding-bottom:10px;display:grid;gap:8px}
+.hd-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.date{font-family:var(--f-num);font-size:13px;color:var(--muted);white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.date b{color:var(--ink);font-weight:600}
+.sphint{font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap}
+.hd.paused .sphint{color:var(--warn)}
+.timebar{display:flex;gap:8px;align-items:center}
+.play{width:42px;height:42px;border-radius:50%;background:var(--ink);color:var(--surface);display:grid;place-items:center;flex-shrink:0;box-shadow:var(--shadow)}
+.play svg{width:16px;height:16px;fill:currentColor}
+.hd.paused .play{background:var(--accent);color:var(--accent-ink);animation:pulse 1.8s ease-out infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 55%,transparent)}100%{box-shadow:0 0 0 12px transparent}}
+.speed{flex:1;min-width:0;display:grid;grid-template-columns:repeat(5,1fr);gap:2px;background:var(--sunk);border:1px solid var(--line);border-radius:12px;padding:3px}
+.speed button{height:34px;border-radius:9px;font-family:var(--f-num);font-size:14px;font-weight:600;color:var(--muted);text-align:center;white-space:nowrap}
+.speed button.on{background:var(--ink);color:var(--surface);box-shadow:0 1px 3px rgba(0,0,0,.18)}
+.hd.paused .speed button.last{box-shadow:inset 0 0 0 1.5px var(--muted);color:var(--ink)}
+.hp{display:grid;grid-template-columns:30px minmax(0,1fr) auto;align-items:center;gap:8px;min-width:0}
+.hp span{font-size:12px;color:var(--muted);white-space:nowrap}
+.bar{flex:1;height:8px;background:var(--sunk);border-radius:99px;overflow:hidden;border:1px solid var(--line)}
+.bar i{display:block;height:100%;background:var(--good);border-radius:99px;transition:width .3s}
+.bar.mid i{background:var(--warn)} .bar.low i{background:var(--bad)}
+.hp b{font-family:var(--f-num);font-size:13.5px;font-weight:600;min-width:3.6em;text-align:right;white-space:nowrap}
+.money{font-family:var(--f-num);font-size:13px;white-space:nowrap}
+.money.neg{color:var(--bad)}
+.status{font-size:12.5px;padding-top:2px;border-top:1px dashed var(--line);padding-top:6px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.status b{color:var(--ink);font-weight:600}
+
+/* main */
+main{flex:1;overflow-y:auto;overflow-x:hidden;padding-block:14px 24px;-webkit-overflow-scrolling:touch}
+.stack{display:grid;gap:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;box-shadow:var(--shadow);min-width:0}
+.eyebrow{font-size:11.5px;letter-spacing:.06em;color:var(--muted);font-weight:600}
+h2{font-family:var(--f-display);font-weight:400;font-size:22px;line-height:1.2;margin:2px 0 0;text-wrap:balance}
+h3{font-family:var(--f-display);font-weight:400;font-size:18px;margin:0;line-height:1.25}
+.sub{color:var(--muted);font-size:13px}
+.row{display:flex;align-items:center;gap:8px;min-width:0}
+.between{justify-content:space-between}
+.wrap{flex-wrap:wrap}
+
+/* priority: hero (do this now) > card > flat (reference) */
+.hero{border:1.5px solid var(--accent);background:var(--accent-soft);box-shadow:none}
+.hero .eyebrow{color:var(--accent)}
+.hero h2{font-size:22px}
+.hero .sub{color:var(--ink);opacity:.8;margin-top:4px}
+.hero .btn{margin-top:12px;width:100%}
+.hero.urgent{border-color:var(--mail);background:var(--mail-soft)}
+.hero.urgent .eyebrow{color:var(--mail)}
+.hero.urgent .btn{background:var(--mail);color:#1b1404}
+.hero.calm{border:1px solid var(--line);background:var(--surface);box-shadow:var(--shadow)}
+.hero.calm .btn{background:var(--sunk);color:var(--ink);border:1px solid var(--line)}
+.card.flat{background:transparent;box-shadow:none;border-style:dashed}
+.card.flat h3{font-family:var(--f-body);font-size:13px;font-weight:600;color:var(--muted)}
+.pausebar{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:10px 12px;border-radius:12px;background:var(--surface);border:1.5px dashed var(--warn);color:var(--warn);font-weight:600;font-size:13.5px}
+.pausebar svg{width:14px;height:14px;fill:currentColor}
+
+/* pixel character */
+.mecard{display:grid;grid-template-columns:104px 1fr;gap:14px;align-items:center;padding:12px 14px}
+.avatar{width:104px;height:124px;border-radius:12px;background:linear-gradient(180deg,var(--sky1,var(--sunk)) 0%,var(--sunk) 78%);border:1px solid var(--line);display:grid;place-items:end center;overflow:hidden}
+.avatar canvas{width:96px;height:120px;image-rendering:pixelated;image-rendering:crisp-edges}
+.mood{font-family:var(--f-display);font-size:24px;line-height:1.15;margin:2px 0 3px}
+.mood.good{color:var(--good)} .mood.warn{color:var(--warn)} .mood.bad{color:var(--bad)}
+.doing{display:inline-block;margin-top:7px;font-size:12px;font-weight:600;padding:3px 9px;border-radius:99px;background:var(--accent-soft);color:var(--accent)}
+
+/* stat meters */
+.meters{display:grid;gap:7px;margin-top:10px}
+.meter{display:grid;grid-template-columns:52px 1fr 34px;align-items:center;gap:8px;font-size:12.5px}
+.meter .bar{height:6px}
+.meter .bar i{background:var(--accent)}
+.meter em{font-style:normal;font-family:var(--f-num);font-size:12px;text-align:right;color:var(--muted)}
+
+/* actions */
+.acts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.act{border:1px solid var(--line);background:var(--sunk);border-radius:12px;padding:10px 11px;display:grid;gap:2px}
+.act:hover:not(:disabled){border-color:var(--accent)}
+.act:disabled{opacity:.45;cursor:not-allowed}
+.act b{font-size:15px}
+.act small{font-size:12px;color:var(--muted);line-height:1.35}
+.act.danger b{color:var(--bad)}
+.progress{margin-top:10px;display:grid;gap:6px}
+.progress .bar{height:10px}
+.progress .bar i{background:var(--accent)}
+
+.log{display:grid;gap:0;margin-top:6px}
+.log div{font-size:12.5px;padding:7px 0;border-top:1px dashed var(--line);display:grid;grid-template-columns:72px 1fr;gap:8px}
+.log div:first-child{border-top:0}
+.log time{font-family:var(--f-num);font-size:11.5px;color:var(--muted)}
+
+/* chips & pills */
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:12px;padding:3px 9px;border-radius:99px;background:var(--sunk);border:1px solid var(--line);color:var(--ink);white-space:nowrap}
+button.chip{cursor:pointer}
+button.chip.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.chip.want{border-style:dashed}
+.pill{font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:6px;white-space:nowrap;background:var(--sunk);color:var(--muted)}
+.pill.good{background:var(--good-soft);color:var(--good)}
+.pill.bad{background:var(--bad-soft);color:var(--bad)}
+.pill.mail{background:var(--mail-soft);color:var(--mail)}
+.pill.acc{background:var(--accent-soft);color:var(--accent)}
+.tier{font-size:11px;font-weight:600;padding:2px 7px;border-radius:5px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.tier.t4,.tier.t5{border-color:var(--accent);color:var(--accent)}
+
+/* segmented */
+.seg{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:3px;gap:3px}
+.seg button{flex:1;text-align:center;padding:7px;border-radius:7px;font-weight:600;font-size:13px;color:var(--muted)}
+.seg button.on{background:var(--accent-soft);color:var(--accent)}
+
+/* posting */
+.post{display:grid;gap:6px;width:100%}
+.post .co{font-weight:600;font-size:13px}
+.ptitle{font-family:var(--f-display);font-size:20px;line-height:1.2}
+.sal{font-size:13px;color:var(--muted)}
+.sal b{font-family:var(--f-num);font-size:19px;font-weight:700;color:var(--ink);margin-right:2px}
+.chip.have{background:var(--good-soft);border-color:var(--good);color:var(--good);font-weight:600}
+.chip.have::before{content:"✓ "}
+button.chip.hit:not(.on){border-color:var(--good);color:var(--good);font-weight:600}
+.meta{font-size:13px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px 10px}
+.meta .num{color:var(--ink)}
+.rate{display:flex;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.rate .star{color:var(--mail);font-weight:700}
+.new{color:var(--bad);font-weight:700;font-size:11px;letter-spacing:.05em}
+.applied{opacity:.6}
+
+/* mail */
+.inbox{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.mrow{display:grid;grid-template-columns:10px 1fr auto;gap:10px;padding:12px 14px;border-top:1px solid var(--line);width:100%;align-items:start}
+.mrow:first-child{border-top:0}
+.mrow .dot{width:8px;height:8px;border-radius:50%;margin-top:6px;background:transparent}
+.mrow.unread .dot{background:var(--mail)}
+.mrow .from{font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:center}
+.mrow.imp.unread{box-shadow:inset 3px 0 0 var(--mail);background:color-mix(in srgb,var(--mail-soft) 45%,var(--surface))}
+.mrow.unread .from{color:var(--ink);font-weight:600}
+.mrow .subj{font-size:14px;line-height:1.35;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.mrow.unread .subj{font-weight:600}
+.mrow time{font-family:var(--f-num);font-size:11px;color:var(--muted);white-space:nowrap}
+.grade{font-family:var(--f-num);font-size:30px;font-weight:600;width:54px;height:54px;border-radius:14px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);flex-shrink:0}
+.grade.gS{background:var(--mail);color:#fff}
+.gparts{display:grid;gap:6px}
+.gparts div{display:grid;grid-template-columns:1fr auto 3em;gap:8px;font-size:13px;align-items:center}
+.gparts em{font-style:normal;color:var(--muted);text-align:right;font-family:var(--f-num)}
+.mbody{font-size:14px;line-height:1.7;white-space:pre-line;background:var(--sunk);border:1px solid var(--line);border-radius:12px;padding:14px}
+
+/* buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:12px 16px;border-radius:12px;font-weight:600;background:var(--accent);color:var(--accent-ink);text-align:center}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.ghost{background:var(--sunk);color:var(--ink);border:1px solid var(--line)}
+.btn.bad{background:var(--bad);color:#fff}
+.btn.block{width:100%}
+.btns{display:flex;gap:8px}
+.btns .btn{flex:1}
+
+/* nav */
+nav.tabs{display:grid;grid-template-columns:repeat(4,1fr);background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+nav.tabs button{display:grid;justify-items:center;gap:3px;padding:8px 0 8px;font-size:12px;color:var(--muted);position:relative;isolation:isolate}
+nav.tabs button.on{color:var(--accent);font-weight:700}
+nav.tabs button.on::before{content:"";position:absolute;top:5px;left:50%;width:52px;height:30px;margin-left:-26px;border-radius:99px;background:var(--accent-soft);z-index:-1}
+nav.tabs svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.badge{position:absolute;top:5px;left:calc(50% + 6px);min-width:17px;height:17px;padding:0 5px;border-radius:99px;background:var(--bad);color:#fff;font-size:10.5px;font-weight:700;display:grid;place-items:center;font-family:var(--f-num)}
+
+/* sheet */
+.overlay{position:fixed;inset:0;background:rgba(10,14,24,.45);z-index:30;display:flex;align-items:flex-end;justify-content:center}
+.overlay.center{align-items:center;padding:16px}
+.sheet{background:var(--bg);width:100%;max-width:460px;max-height:90%;overflow-y:auto;border-radius:18px 18px 0 0;padding-top:8px;padding-bottom:calc(env(safe-area-inset-bottom,0px) + 16px);animation:up .22s ease-out}
+.overlay.center .sheet{border-radius:18px;max-height:92%;padding-bottom:16px}
+.grab{width:40px;height:4px;border-radius:9px;background:var(--line);margin:0 auto 10px}
+.sheet-hd{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+.x{font-size:13px;color:var(--muted);padding:6px 8px;border-radius:8px;background:var(--sunk);border:1px solid var(--line)}
+@keyframes up{from{transform:translateY(24px);opacity:.4}to{transform:none;opacity:1}}
+.sec{display:grid;gap:8px}
+.sec + .sec{margin-top:16px}
+.label{font-size:12px;font-weight:600;color:var(--muted);display:flex;justify-content:space-between}
+.reviews{display:grid;gap:6px}
+.review{font-size:13px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
+.review::before{content:"“";color:var(--muted);margin-right:2px}
+.review::after{content:"”";color:var(--muted);margin-left:2px}
+.stats3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px;text-align:center}
+.stat b{display:block;font-family:var(--f-num);font-size:18px}
+.stat span{font-size:11.5px;color:var(--muted)}
+.stat s{font-family:var(--f-num);font-size:11px;color:var(--muted)}
+.projpick{display:grid;gap:6px}
+.proj{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:9px 11px;display:grid;gap:4px;width:100%}
+button.proj.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
+.proj b{font-size:13.5px}
+.feel{font-family:var(--f-display);font-size:20px}
+
+/* interview */
+.iv-q{background:var(--surface);border:1px solid var(--line);border-radius:14px 14px 14px 4px;padding:14px;font-size:15px;line-height:1.55}
+.iv-opts{display:grid;gap:6px}
+.iv-opts button{border:1px solid var(--line);background:var(--surface);border-radius:12px;padding:11px 12px;font-size:14px}
+.iv-opts button:hover{border-color:var(--accent)}
+.iv-react{font-style:italic;color:var(--muted);text-align:center;padding:10px}
+.dots{display:flex;gap:6px;justify-content:center}
+.dots i{width:24px;height:4px;border-radius:9px;background:var(--line)}
+.dots i.on{background:var(--accent)}
+
+/* tree */
+.tree{display:grid;gap:0;margin-top:6px}
+.tnode{display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:center;padding:4px 0;position:relative}
+.tnode .pip{width:20px;height:20px;border-radius:50%;border:2px solid var(--line);background:var(--surface);margin-left:4px;z-index:1;font-family:var(--f-num);font-size:10px;display:grid;place-items:center;color:var(--muted)}
+.tnode.got .pip{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.tnode.now .pip{box-shadow:0 0 0 4px var(--accent-soft)}
+.tnode .tt{font-size:13.5px}
+.tnode.got .tt{font-weight:600}
+.tnode.lock .tt{color:var(--muted);letter-spacing:.12em;font-family:var(--f-num)}
+.tnode.lock .tt small{letter-spacing:0;font-family:var(--f-body)}
+.tnode.lock .pip{border-style:dashed}
+.tnode .tt small{display:block;color:var(--muted);font-size:11.5px;font-weight:400}
+.tline{width:2px;height:12px;background:var(--line);margin-left:13px}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+.branch{border:1px solid var(--line);border-radius:12px;padding:8px;background:var(--sunk)}
+.branch.pick{border-color:var(--accent);background:var(--accent-soft)}
+.branch.off{opacity:.45}
+.branch h4{margin:0 0 4px;font-size:12px;color:var(--muted);font-weight:600}
+.hist{display:grid;gap:8px}
+.hitem{border-left:3px solid var(--line);padding:2px 0 2px 10px}
+.hitem.cur{border-color:var(--accent)}
+
+/* push */
+.gauges{display:grid;gap:5px}
+.hp{position:relative}
+.bar.money i{background:var(--accent)}
+.bar.money.mid i{background:var(--warn)} .bar.money.low i{background:var(--bad)}
+.mnum.neg{color:var(--bad)}
+.flow{font-size:11.5px;color:var(--muted);padding-left:38px;font-variant-numeric:tabular-nums}
+.flow .plus{color:var(--good);font-weight:600} .flow .minus{color:var(--bad);font-weight:600}
+.delta{position:absolute;right:0;top:-14px;font-style:normal;font-family:var(--f-num);font-size:12px;font-weight:600;opacity:0;pointer-events:none}
+.delta.go{animation:dl 1.6s ease-out}
+.delta.plus{color:var(--good)} .delta.minus{color:var(--bad)}
+@keyframes dl{0%{opacity:0;transform:translateY(6px)}15%{opacity:1;transform:none}75%{opacity:1}100%{opacity:0;transform:translateY(-6px)}}
+.date .clock{color:var(--ink);font-family:var(--f-num)}
+.push{position:fixed;left:50%;top:120px;opacity:0;pointer-events:none;transform:translate(-50%,-12px);transition:transform .3s ease,opacity .25s ease;width:calc(100% - 24px);max-width:436px;z-index:50;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.2);padding:11px 13px;display:grid;grid-template-columns:36px 1fr;gap:10px;align-items:center;transition:transform .35s cubic-bezier(.2,.9,.3,1.2)}
+.push.show{transform:translate(-50%,0);opacity:1;pointer-events:auto}
+.push .ico{width:36px;height:36px;border-radius:10px;background:var(--mail);display:grid;place-items:center;color:var(--surface)}
+.push .ico svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2}
+.push .pf{font-size:12px;color:var(--muted)}
+.push .ps{font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* intro */
+.intro{position:fixed;inset:0;z-index:40;background:var(--bg);overflow-y:auto}
+.intro-in{max-width:460px;margin:0 auto;padding-top:calc(env(safe-area-inset-top,0px) + 36px);padding-bottom:calc(env(safe-area-inset-bottom,0px) + 28px);display:grid;gap:18px}
+.logo{font-family:var(--f-display);font-size:56px;line-height:1;letter-spacing:-.01em}
+.logo span{color:var(--accent)}
+.tag{font-size:15px;color:var(--muted);max-width:32ch}
+.field{display:grid;gap:6px}
+.field input{font:inherit;font-size:16px;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.tracks{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.track{border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:12px;display:grid;gap:3px}
+.track.on{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset;background:var(--accent-soft)}
+.track b{font-family:var(--f-display);font-size:19px;font-weight:400}
+.track small{font-size:11.5px;color:var(--muted);line-height:1.35}
+.rules{font-size:12.5px;color:var(--muted);display:grid;gap:4px;padding-left:18px;margin:0}
+.empty{text-align:center;color:var(--muted);padding:28px 10px;font-size:13px}
+.fx{position:fixed;inset:0;pointer-events:none;z-index:45}
+#coach{position:fixed;inset:0;z-index:60;pointer-events:none}
+#coach .cb{position:fixed;background:rgba(8,12,22,.62);pointer-events:auto;transition:all .25s ease}
+#coach .cblk{position:fixed;pointer-events:auto}
+#coach .cring{position:fixed;border-radius:14px;box-shadow:0 0 0 2.5px var(--accent),0 0 0 7px color-mix(in srgb,var(--accent) 30%,transparent);pointer-events:none;transition:all .25s ease}
+#coach.wait .cring{animation:ring 1.4s ease-in-out infinite}
+@keyframes ring{50%{box-shadow:0 0 0 2.5px var(--accent),0 0 0 11px color-mix(in srgb,var(--accent) 15%,transparent)}}
+.cbub{position:fixed;pointer-events:auto;background:var(--surface);color:var(--ink);border-radius:16px;padding:14px 15px 12px;box-shadow:0 12px 40px rgba(0,0,0,.35);transition:top .25s ease,left .25s ease}
+.cbub .cstep{font-family:var(--f-num);font-size:11px;color:var(--accent);font-weight:600;letter-spacing:.04em}
+.cbub h3{margin:2px 0 6px;font-size:19px}
+.cbub p{margin:0;font-size:14px;line-height:1.6;white-space:pre-line}
+.cbub .cdo{margin-top:8px;font-size:13px;font-weight:700;color:var(--accent)}
+.cbub .cbtns{display:flex;justify-content:space-between;align-items:center;margin-top:12px;gap:8px}
+.cbub .cskip{font-size:12.5px;color:var(--muted);padding:6px 2px;text-decoration:underline}
+.cbub .btn{padding:9px 18px}
+.cele{text-align:center;padding:8px 4px 2px}
+.cele-stamp{display:inline-block;font-weight:800;font-size:15px;letter-spacing:.12em;color:var(--good);border:2.5px solid var(--good);border-radius:10px;padding:5px 14px;transform:rotate(-6deg);animation:stamp .55s cubic-bezier(.2,1.6,.4,1) both}
+.cele h2{font-size:24px;margin:14px 0 2px;animation:rise .5s .15s ease both}
+.cele .ct{color:var(--muted);font-size:14px;animation:rise .5s .22s ease both}
+.cele-sal{margin:16px auto 4px;font-family:var(--f-num);font-size:28px;font-weight:700;animation:rise .5s .3s ease both}
+.cele-sal small{font-size:14px;font-weight:500;color:var(--muted)}
+.cele-up{display:inline-block;margin-top:4px;font-size:13px;font-weight:700;color:var(--good);background:var(--good-soft);border-radius:999px;padding:3px 10px;animation:rise .5s .4s ease both}
+.cele-up.dn{color:var(--warn);background:transparent;border:1px solid var(--line)}
+.cele-tags{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:12px 0 4px;animation:rise .5s .48s ease both}
+@keyframes stamp{0%{transform:rotate(-6deg) scale(2.4);opacity:0}100%{transform:rotate(-6deg) scale(1);opacity:1}}
+@keyframes rise{0%{transform:translateY(10px);opacity:0}100%{transform:none;opacity:1}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <div class="sky" id="sky" aria-hidden="true"></div>
+  <header class="hd gut" id="hd">
+    <div class="hd-row">
+      <div class="date" id="hDate"></div>
+      <div class="sphint" id="spHint"></div>
+    </div>
+    <div class="timebar">
+      <button class="play" id="play" data-play aria-label="재생 / 일시정지"></button>
+      <div class="speed" id="speed" role="group" aria-label="시간 속도">
+        <button data-sp="1">1×</button><button data-sp="2">3×</button><button data-sp="3">6×</button><button data-sp="4">10×</button><button data-sp="5">20×</button>
+      </div>
+    </div>
+    <div class="gauges">
+      <div class="hp"><span>체력</span><div class="bar" id="hpWrap"><i id="hpBar"></i></div><b id="hpNum"></b></div>
+      <div class="hp"><span>통장</span><div class="bar money" id="mWrap"><i id="mBar"></i></div><b id="hMoney" class="mnum"></b><em class="delta" id="mDelta"></em></div>
+      <div class="flow" id="mFlow"></div>
+    </div>
+    <div class="status" id="hStatus"></div>
+  </header>
+  <main class="gut" id="main"></main>
+  <nav class="tabs" id="tabs">
+    <button data-tab="home"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>홈</button>
+    <button data-tab="board"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 13h18"/></svg>오퍼로<span class="badge" id="bBoard" hidden></span></button>
+    <button data-tab="mail"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>메일<span class="badge" id="bMail" hidden></span></button>
+    <button data-tab="me"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="19" r="2"/><path d="M12 7v5M12 12l-6 5M12 12l6 5"/></svg>커리어</button>
+  </nav>
+</div>
+
+<div class="push" id="push" role="status"><div class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></div><div style="min-width:0"><div class="pf" id="pushFrom"></div><div class="ps" id="pushSubj"></div></div></div>
+<div class="overlay" id="ov" hidden><div class="sheet gut" id="sheet"></div></div>
+<div class="intro gut" id="intro" hidden></div>
+<div id="coach" hidden><div class="cb" id="cbT"></div><div class="cb" id="cbB"></div><div class="cb" id="cbL"></div><div class="cb" id="cbR"></div><div class="cblk" id="cBlk"></div><div class="cring" id="cRing"></div><div class="cbub" id="cBub" role="dialog" aria-live="polite"></div></div>
+
+<script>
+(function(){
+"use strict";
+/* ---------- utils ---------- */
+const $=s=>document.querySelector(s);
+const R=(a,b)=>a+Math.random()*(b-a);
+const RI=(a,b)=>Math.floor(R(a,b+1));
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const sig=x=>1/(1+Math.exp(-x));
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const sample=(a,n)=>shuffle(a).slice(0,n);
+const wpick=ws=>{let s=ws.reduce((x,y)=>x+y,0),r=Math.random()*s;for(let i=0;i<ws.length;i++){r-=ws[i];if(r<0)return i;}return ws.length-1;};
+const SAVE='ijikgak_v1';
+const D0=new Date(2027,2,2).getTime();
+const dateOf=d=>new Date(D0+d*86400000);
+const WD='일월화수목금토';
+const fmtD=d=>{const t=dateOf(d);return `${t.getFullYear()}.${String(t.getMonth()+1).padStart(2,'0')}.${String(t.getDate()).padStart(2,'0')}`;};
+const fmtDW=d=>`${fmtD(d)} (${WD[dateOf(d).getDay()]})`;
+const won=m=>{const a=Math.abs(Math.round(m));const s=a>=10000?(a/10000).toFixed(1)+'억':a.toLocaleString()+'만';return (m<0?'-':'')+s;};
+const dur=days=>{const y=Math.floor(days/365),m=Math.floor((days%365)/30);return y?`${y}년 ${m}개월`:`${m}개월`;};
+
+/* ---------- data ---------- */
+const TR={
+ dev:{name:'개발',desc:'코드로 서비스를 만드는 사람',t:['신입 개발자','주니어 개발자','개발자','시니어 개발자'],ic:['수석 엔지니어','테크 펠로우'],m:['개발 팀장','CTO'],
+  kw:['React','Spring','클라우드','데이터','AI','보안','모바일','DevOps','알고리즘','오픈소스'],proj:['날씨 앱','가계부 서비스','채팅 봇','블로그 엔진','크롤러','실시간 대시보드']},
+ design:{name:'디자인',desc:'화면과 경험을 그리는 사람',t:['신입 디자이너','주니어 디자이너','프로덕트 디자이너','시니어 디자이너'],ic:['리드 디자이너','디자인 펠로우'],m:['디자인 팀장','CDO'],
+  kw:['UX리서치','Figma','브랜딩','모션','디자인시스템','접근성','3D','일러스트','프로토타이핑','UX라이팅'],proj:['앱 UI 리디자인','리브랜딩 시안','아이콘 세트','포스터 시리즈','디자인 시스템','모션 그래픽']},
+ pm:{name:'기획',desc:'무엇을 만들지 정하는 사람',t:['신입 기획자','주니어 PM','PM','시니어 PM'],ic:['프린시플 PM','프로덕트 펠로우'],m:['프로덕트 팀장','CPO'],
+  kw:['데이터분석','SQL','로드맵','A/B테스트','B2B','커머스','핀테크','그로스','UX','PRD'],proj:['서비스 기획서','시장 분석 리포트','MVP 기획','지표 대시보드','UX 개선안','신사업 제안서']},
+ mkt:{name:'마케팅',desc:'사람들이 알게 만드는 사람',t:['신입 마케터','주니어 마케터','마케터','시니어 마케터'],ic:['그로스 리드','마케팅 펠로우'],m:['마케팅 팀장','CMO'],
+  kw:['퍼포먼스','콘텐츠','SNS','브랜딩','CRM','SEO','데이터분석','카피라이팅','캠페인','인플루언서'],proj:['SNS 채널 운영','브랜드 캠페인','뉴스레터','바이럴 영상','콘텐츠 시리즈','랜딩페이지 실험']}
+};
+const LV=['신입','주니어','미들','시니어','리드','탑'];
+const REQY=[0,1,3,5,8,11];
+const TIER=['','초기 스타트업','성장 스타트업','중견기업','대기업','글로벌 빅테크'];
+const TIERW=[32,28,20,13,7];
+const CULT=['성과','협업','안정','도전','성장'];
+const TONE={성과:'숫자로 증명하는 사람',협업:'함께 일하기 좋은 사람',안정:'끝까지 책임지는 사람',도전:'먼저 시도하는 사람',성장:'빠르게 배우는 사람'};
+const CULT_REV={
+ 성과:['성과 내면 보상 확실함','숫자로 말하는 회사','인센티브는 크지만 압박도 큼'],
+ 협업:['팀 분위기 최고, 서로 잘 도와줌','회의는 많지만 다들 친절함','사람이 좋아서 버팀'],
+ 안정:['정년까지 다니는 분위기','변화는 느리지만 안정적','보수적이지만 망할 걱정 없음'],
+ 도전:['새로운 시도를 장려함','매일이 실험, 피벗이 잦음','빠르게 만들고 빠르게 버림'],
+ 성장:['배울 게 정말 많음','피드백 문화가 잘 잡혀 있음','사수 잘 만나면 폭풍 성장']
+};
+const STAT_REV={
+ wlb:[['야근이 일상, 주말에도 연락 옴','퇴근 시간이 랜덤'],['칼퇴 보장, 연차 눈치 없음','저녁이 있는 삶']],
+ env:[['사무실 낡고 장비 구림','복지는 명절 선물이 끝'],['복지·장비 빵빵','사무실이 쾌적하고 식대 넉넉']],
+ growth:[['5년째 같은 일만 하는 중','배울 사람이 없음'],['맡는 일 범위가 계속 넓어짐','이력서에 쓸 거리가 많아짐']]
+};
+const PRE=['넥스트','블루','하이','모아','온','루트','픽셀','스텔라','그린','코어','브릿지','노바','어반','클라우','라이트','오로라','바이트','윙크','포레','유니','소울','타이드','메이','한빛','새솔','다온','빌드','웨이브'];
+const SUF=['소프트','랩스','테크','컴퍼니','웍스','스튜디오','네트웍스','플랫폼','다이나믹스','파트너스'];
+const SUF_BIG=['그룹','홀딩스','글로벌','코리아','시스템즈'];
+const IND=['커머스','핀테크','게임','에듀테크','헬스케어','모빌리티','미디어','SaaS','물류','여행'];
+
+const QS=[
+ {q:'본인의 가장 큰 강점은 무엇인가요?',a:{성과:'목표를 숫자로 만들고, 반드시 달성합니다.',협업:'누구와도 잘 맞추는 소통력입니다.',안정:'꾸준함입니다. 맡은 일은 끝까지 책임집니다.',도전:'남들이 안 해본 걸 먼저 시도합니다.',성장:'피드백을 빠르게 흡수해서 성장합니다.'}},
+ {q:'왜 저희 회사에 지원하셨나요?',a:{성과:'성과를 확실하게 보상해 주는 곳이라서요.',협업:'함께 일하고 싶은 팀이라고 들었습니다.',안정:'오래 다니며 깊게 일할 수 있는 회사라서요.',도전:'업계를 바꾸는 시도를 하고 있어서요.',성장:'가장 많이 배울 수 있는 곳이라 생각했습니다.'}},
+ {q:'야근에 대해 어떻게 생각하세요?',a:{성과:'결과를 위해 필요하다면 합니다.',협업:'팀이 바쁘면 같이 남는 편입니다.',안정:'계획을 잘 세워 줄이는 것도 실력이라 생각합니다.',도전:'몰입하면 시간 가는 줄 모릅니다.',성장:'배우는 게 있다면 괜찮습니다.'}},
+ {q:'동료와 의견이 크게 부딪힌다면 어떻게 하시겠어요?',a:{성과:'데이터로 어느 쪽이 맞는지 검증하겠습니다.',협업:'먼저 상대 입장을 충분히 듣겠습니다.',안정:'합의된 프로세스와 기준을 따르겠습니다.',도전:'둘 다 작게 실험해 보자고 제안하겠습니다.',성장:'제가 놓친 관점이 있는지 먼저 돌아보겠습니다.'}},
+ {q:'5년 뒤 본인은 어떤 모습일까요?',a:{성과:'팀에서 가장 큰 숫자를 만드는 사람이요.',협업:'모두가 같이 일하고 싶어 하는 동료요.',안정:'이 회사에서 대체 불가능한 사람이요.',도전:'새로운 사업을 처음부터 일궈 본 사람이요.',성장:'지금과는 비교도 안 되게 성장한 사람이요.'}},
+ {q:'실패했던 경험과 거기서 배운 점은요?',a:{성과:'목표를 못 맞췄고, 그 뒤로 지표를 매일 봅니다.',협업:'혼자 끌어안다 망쳤고, 공유의 중요성을 배웠습니다.',안정:'급하게 바꾸다 사고가 났고, 검증 절차를 지킵니다.',도전:'실패는 많았지만, 빨리 실패하는 법을 배웠습니다.',성장:'회고를 습관으로 만드는 계기가 됐습니다.'}}
+];
+// asked instead of the last culture question once the resume shows 3+ short stints
+const HOPQ=[
+ {t:'더 큰 역할을 찾아 옮겼습니다. 이번에는 오래 일할 곳을 찾고 있어요.',s:c=>c==='안정'?0.6:0.8},
+ {t:'회사 사정이 계속 좋지 않았습니다.',s:()=>0.3},
+ {t:'솔직히 연봉 때문이었습니다.',s:c=>c==='성과'?1:0.1},
+ {t:'안 맞는 곳에서 버티는 건 서로 손해라고 생각했어요.',s:c=>c==='도전'?1:0.1}
+];
+const REACT_POS=['면접관이 고개를 끄덕인다.','"좋네요."','면접관의 표정이 살짝 풀린다.','옆 면접관과 눈빛을 주고받는다.'];
+const REACT_NEU=['면접관이 무언가를 적는다.','"음… 그렇군요."','잠깐의 정적이 흐른다.','면접관이 다음 질문으로 넘어간다.'];
+
+/* ---------- state ---------- */
+let S=null;
+const UI={tab:'home',boardSeg:'posts',hold:0,dirty:true,pushQ:[],pushing:false};
+
+function save(){try{if(S)S.saved=Date.now();localStorage.setItem(SAVE,JSON.stringify(S));}catch(e){}}
+function load(){try{const t=localStorage.getItem(SAVE);return t?JSON.parse(t):null;}catch(e){return null;}}
+function wipe(){try{localStorage.removeItem(SAVE);}catch(e){}}
+
+const T=()=>TR[S.track];
+const yrs=()=>S.careerDays/365;
+const co=n=>S.companies.find(c=>c.name===n);
+const proj=id=>S.projects.find(p=>p.id===id);
+const nid=()=>S.nid++;
+function plevel(){
+ const y=yrs(),k=S.skill;let L=1;
+ if(y>=1)L=2; if(y>=3)L=3;
+ if(y>=5&&k.prac>=35)L=4;
+ if(L>=4&&S.branch&&y>=8&&(S.branch==='m'?k.lead>=35:k.prac>=60))L=5;
+ if(L>=5&&y>=11&&(S.branch==='m'?k.lead>=60:k.prac>=80))L=6;
+ return L;
+}
+function titleOf(L,br){const t=T();if(L<=4)return t.t[L-1];return br?t[br][L-5]:`${t.ic[L-5]} / ${t.m[L-5]}`;}
+const maxTier=()=>Math.max(0,...S.history.map(h=>h.tier),S.job?S.job.tier:0);
+function myKws(){const s=new Set(S.learned);S.projects.forEach(p=>p.tags.forEach(t=>s.add(t)));if(S.job)S.job.kws.forEach(k=>s.add(k));S.history.forEach(h=>(h.kws||[]).forEach(k=>s.add(k)));return [...s];}
+
+function genCompany(t,used){
+ let name;do{name=pick(PRE)+pick(t>=4?SUF_BIG.concat(SUF.slice(0,3)):SUF);}while(used.has(name));used.add(name);
+ const wlb=clamp(Math.round(R(0.6,5.4)+(t>=4?0.5:0)-(t<=2?0.6:0)),1,5);
+ const env=clamp(Math.round(R(0.6,4.2)+t*0.3),1,5);
+ const growth=clamp(Math.round(R(0.6,5.4)+(t===2?0.4:0)),1,5);
+ const reviews=RI(3,28)*t+RI(0,9);
+ const amp=clamp(3/Math.sqrt(reviews),0.3,1.4);
+ const d=v=>Math.round(clamp(v+R(-amp,amp),1,5)*10)/10;
+ const culture=pick(CULT);
+ const c={name,tier:t,ind:pick(IND),wlb,env,growth,culture,reviews,dw:d(wlb),de:d(env),dg:d(growth),known:false,insider:false};
+ c.rating=Math.round(clamp((c.dw+c.de+c.dg)/3+R(-0.3,0.3),1,5)*10)/10;
+ const rv=[];
+ rv.push(pick(CULT_REV[Math.random()<0.72?culture:pick(CULT)]));
+ const keys=['wlb','env','growth'];const kk=pick(keys);const tv=c[kk];
+ const truthful=Math.random()<0.8;const good=truthful?(tv>=3):(tv<3);
+ rv.push(pick(STAT_REV[kk][good?1:0]));
+ if(Math.random()<0.5){const k2=pick(keys.filter(x=>x!==kk));rv.push(pick(STAT_REV[k2][c[k2]>=3?1:0]));}
+ c.rv=rv;
+ if(t<=2&&Math.random()<0.1){
+  c.shady=true;c.wlb=RI(1,2);c.env=RI(1,3);c.growth=RI(2,3);c.reviews=RI(2,7);
+  c.dw=+R(4.1,4.8).toFixed(1);c.de=+R(4.2,4.9).toFixed(1);c.dg=+R(4.3,4.9).toFixed(1);c.rating=+R(4.5,4.9).toFixed(1);
+  c.rv=sample(SHADY_REV,2);if(Math.random()<0.5)c.rv.push(pick(['급여일이 가끔 하루이틀 밀림','요즘 퇴사자가 좀 많음','법인카드 결제가 자주 거절됨']));
+ }
+ return c;
+}
+const SHADY_REV=['대표님 비전이 정말 대단함, 곧 유니콘 됨','투자 곧 들어온다고 함! 분위기 최고','업계 최고 대우, 지금이 기회','연봉만큼은 어디에도 안 밀림','다들 열정 넘치고 가족 같은 분위기'];
+function genPosting(opt){
+ opt=opt||{};
+ const pl=plevel(),y=yrs();
+ let L=opt.L||clamp(pl+pick([-1,0,0,0,1,1,2]),1,6);
+ if(!opt.L){if(y<2&&Math.random()<0.55)L=1;if(y>=2&&L===1)L=2;}
+ let t=opt.t||wpick(TIERW)+1;if(L>=5&&t<3)t=RI(3,5);if(L===6&&t<4&&Math.random()<0.6)t=RI(4,5);
+ const all=S.companies.filter(c=>c.tier===t),open=all.filter(c=>!c.closed);const c=pick(open.length?open:all);
+ const br=L>=5?(Math.random()<0.5?'ic':'m'):null;
+ const base=[2800,3600,4800,6200,8500,13000][L-1],mult=[0,0.78,0.9,1,1.2,1.55][t];
+ return {id:nid(),co:c.name,tier:t,level:L,branch:br,title:titleOf(L,br),kws:sample(T().kw,3),reqYears:REQY[L-1],
+  salary:Math.round(base*mult*R(0.92,1.1)*(c.shady?R(1.3,1.6):1)/100)*100,until:S.day+RI(10,30),posted:S.day,applied:false};
+}
+
+function newGame(name,track){
+ S={v:1,name,track,branch:null,day:0,speed:1,hp:100,money:300,skill:{prac:8,collab:6,lead:0},careerDays:0,blankDays:0,
+  job:null,history:[],projects:[],learned:[],companies:[],postings:[],apps:[],mails:[],q:[],log:[],action:null,leave:15,nid:1,won:false,life:160,ev:{},leaveLog:[],debtDays:0,
+  stats:{applied:0,interviews:0,offers:0,moves:0,leaves:0},lastPL:1,momDay:-999,branchAsked:false};
+ const used=new Set();for(let t=1;t<=5;t++)for(let i=0;i<9;i++)S.companies.push(genCompany(t,used));
+ const kws=sample(T().kw,3);
+ S.learned=[kws[0]];
+ S.projects.push({id:nid(),name:'졸업 프로젝트 · '+pick(T().proj),tags:[kws[1],kws[2]],q:RI(30,42),day:0});
+ for(let i=0;i<8;i++)S.postings.push(genPosting());
+ S.postings.forEach(p=>p.posted=-RI(0,6));
+ addMail({from:'오퍼로',subject:`${name}님, 오퍼로 가입을 환영합니다`,body:`오퍼로는 매일 새 공고가 올라오는 가상 채용 포털입니다.\n\n• 오퍼로 탭에서 공고를 보고, 이력서와 포트폴리오를 골라 지원하세요.\n• 결과는 메일로 옵니다. 언제 올지는 회사 마음입니다. 안 올 수도 있어요.\n• 회사 평점은 리뷰 기반이라 실제와 다를 수 있습니다. 리뷰가 적을수록 더 그렇습니다.\n• 체력이 0이 된 채로 일하면 강제 휴직, 즉 공백기가 생깁니다.\n\n목표는 ${T().name} 커리어의 끝, 글로벌 빅테크의 '${T().ic[1]}' 또는 '${T().m[1]}'입니다.`},true);
+ log('구직을 시작했다. 아직 경력은 없다.');
+ save();
+}
+
+/* ---------- mail & log ---------- */
+function addMail(m,silent){
+ m.id=nid();m.day=S.day;m.read=false;m.done=false;S.mails.unshift(m);
+ if(S.mails.length>80)S.mails.length=80;
+ UI.dirty=true;
+ if(UI.away){if(silent)return;UI.away.n++;if(isImp(m)){UI.away.imp.push(m.subject);if(OPT.pauseImp&&UI.away.stop==null)UI.away.stop=S.day;}if(document.hidden)sysNote(m);return;}
+ if(!silent)pushNote(m);
+}
+// result mails keep the outcome sealed: the board and home show only "결과 도착" until the player opens one of that application's mails
+function result(a,logText,m){addMail(m);m.log=logText;a.pend=m.id;}
+function hidden(a){return !!(a.pend&&S.mails.some(m=>m.id===a.pend&&!m.read));}
+function log(t){S.log.unshift({d:S.day,t});if(S.log.length>40)S.log.length=40;UI.dirty=true;}
+// events land at a random office hour (09:00–18:30) unless exact
+function sched(day,kind,data){const at=data&&data.exact?day:Math.floor(day)+R(0.375,0.77);S.q.push(Object.assign({kind},data||{},{day:at}));}
+function runDue(){const t=S.day+(S.frac||0);if(!S.q.some(e=>e.day<=t))return;const due=S.q.filter(e=>e.day<=t).sort((a,b)=>a.day-b.day);S.q=S.q.filter(e=>e.day>t);due.forEach(handle);}
+function deliver(m){if(m.money)S.money+=m.money;if(m.hp)S.hp=clamp(S.hp+m.hp,0,100);addMail(m);}
+function remind(a){sched(a.deadline-1+0.4,'remind',{app:a.id,exact:true});}
+
+/* ---------- applying ---------- */
+function req(p){return p.level*22+p.tier*9-14;}
+function calcPower(p,res){
+ const y=yrs(),k=S.skill,c=co(p.co);
+ let pw=Math.min(y,p.reqYears+3)*4+k.prac*0.5+k.collab*0.3;
+ if(p.level>=4)pw+=k.lead*(p.branch==='m'?0.7:0.25);
+ if(p.level>=5&&p.branch==='ic')pw+=k.prac*0.2;
+ pw+=res.kws.filter(x=>p.kws.includes(x)).length*5;
+ res.projects.forEach(id=>{const pr=proj(id);if(pr)pw+=pr.q/12+pr.tags.filter(t=>p.kws.includes(t)).length*3;});
+ if(c&&res.tone===c.culture)pw+=4;
+ pw-=Math.min(20,Math.max(0,S.blankDays-60)/30*2);
+ if(y<p.reqYears)pw-=(p.reqYears-y)*8;
+ pw-=hops()*6;
+ pw-=recentLeaves()*7;
+ pw+=maxTier()*2;
+ return pw;
+}
+function hops(){return S.history.filter(h=>h.reason==='이직'&&h.end-h.start<365).length;}
+function recentLeaves(){return (S.leaveLog||[]).filter(d=>S.day-d<1095).length;}
+function feel(p){
+ if(p>=0.62)return['해볼 만하다','good'];
+ if(p>=0.38)return['반반이다',''];
+ if(p>=0.16)return['상향 지원이다','mail'];
+ return['기적을 바라는 지원','bad'];
+}
+function submitApp(p,res){
+ const pw=calcPower(p,res),rq=req(p),pDoc=clamp(sig((pw-rq)/10),0.02,0.95);
+ const app={id:nid(),p:JSON.parse(JSON.stringify(p)),res,pw,rq,pDoc,stage:'doc',day:S.day};
+ S.apps.unshift(app);p.applied=true;S.stats.applied++;S.hp=Math.max(0,S.hp-1.5);
+ addMail({from:`${p.co} 채용팀`,subject:`[${p.co}] 지원이 정상적으로 접수되었습니다`,body:`안녕하세요, ${S.name}님.\n${p.title} 포지션에 지원해 주셔서 감사합니다.\n\n서류 검토 후 결과를 안내드리겠습니다.\n검토 기간은 포지션 상황에 따라 다를 수 있습니다.`},true);
+ if(Math.random()<0.15)sched(S.day+45,'ghost',{app:app.id});
+ else sched(S.day+Math.round(2+Math.pow(Math.random(),1.6)*20),'doc',{app:app.id});
+ log(`${p.co} · ${p.title}에 지원했다.`);
+ save();
+}
+const appById=id=>S.apps.find(a=>a.id===id);
+
+function handle(e){
+ const a=e.app?appById(e.app):null;
+ if(e.kind==='doc'&&a&&a.stage==='doc'){
+  const c=a.p.co;
+  if(Math.random()<a.pDoc){
+   a.stage='invite';a.deadline=S.day+7;
+   result(a,`${c} 서류 합격!`,{from:`${c} 채용팀`,subject:`[${c}] 서류 전형 결과 안내`,body:`안녕하세요, ${S.name}님.\n${a.p.title} 포지션 서류 전형 결과를 안내드립니다.\n\n축하드립니다. 서류 전형에 합격하셨습니다.\n${fmtD(a.deadline)}까지 면접에 참석해 주세요.\n\n기한이 지나면 불참으로 처리됩니다.`,type:'invite',app:a.id});
+   sched(a.deadline+1,'invExp',{app:a.id,exact:true});remind(a);
+  }else{
+   a.stage='rejected';
+   result(a,`${c} 서류 탈락.`,{from:`${c} 채용팀`,subject:`[${c}] 서류 전형 결과 안내`,body:`안녕하세요, ${S.name}님.\n${a.p.title} 포지션에 보여주신 관심에 감사드립니다.\n\n귀하의 역량은 충분히 훌륭하나, 한정된 인원으로 인해 이번에는 함께하지 못하게 되었습니다.\n\n${S.name}님의 앞날을 응원하겠습니다.`,type:'reject',app:a.id});
+  }
+ }else if(e.kind==='ghost'&&a&&a.stage==='doc'){a.stage='ghost';UI.dirty=true;}
+ else if(e.kind==='ghost2'&&a&&a.stage==='wait'){a.stage='ghost';UI.dirty=true;}
+ else if(e.kind==='invExp'&&a&&a.stage==='invite'){a.stage='expired';if(!hidden(a))log(`${a.p.co} 면접 기한이 지났다.`);}
+ else if(e.kind==='int'&&a&&a.stage==='wait'){
+  const c=a.p.co;
+  if(Math.random()<a.pInt){
+   a.stage='offer';a.deadline=S.day+7;S.stats.offers++;
+   result(a,`${c} 최종 합격!!`,{from:`${c} 인사팀`,subject:`[${c}] 최종 전형 결과 안내`,body:`안녕하세요, ${S.name}님.\n\n최종 합격을 진심으로 축하드립니다!\n\n• 포지션: ${a.p.title}\n• 연봉: ${a.p.salary.toLocaleString()}만원\n\n${fmtD(a.deadline)}까지 입사 의사를 회신해 주세요.`,type:'offer',app:a.id});
+   sched(a.deadline+1,'offExp',{app:a.id,exact:true});remind(a);
+  }else{
+   a.stage='rejected';
+   result(a,`${c} 최종 불합격.`,{from:`${c} 인사팀`,subject:`[${c}] 최종 전형 결과 안내`,body:`안녕하세요, ${S.name}님.\n바쁘신 와중에 면접에 참석해 주셔서 감사합니다.\n\n신중히 검토한 결과, 아쉽게도 이번에는 모시지 못하게 되었습니다.\n좋은 인연으로 다시 뵙기를 바랍니다.`,type:'reject',app:a.id});
+  }
+ }else if(e.kind==='offExp'&&a&&a.stage==='offer'){a.stage='expired';if(!hidden(a))log(`${a.p.co} 오퍼 기한이 지났다.`);}
+ else if(e.kind==='hh'&&a&&a.stage==='hhwait'){
+  a.stage='invite';a.deadline=S.day+7;
+  result(a,`${a.p.co} 헤드헌터 경유 면접 제안.`,{from:`${a.p.co} 채용팀`,subject:`[${a.p.co}] 면접 일정 안내`,body:`안녕하세요, ${S.name}님.\n헤드헌터를 통해 전달받은 이력서를 인상 깊게 보았습니다.\n\n${a.p.title} 포지션 면접에 초대드립니다.\n${fmtD(a.deadline)}까지 참석해 주세요.`,type:'invite',app:a.id});
+  sched(a.deadline+1,'invExp',{app:a.id,exact:true});remind(a);
+ }else if(e.kind==='billExp'){const m=S.mails.find(x=>x.id===e.mail);if(m&&m.type==='bill'&&!m.done)payBill(m,m.def,true);}
+ else if(e.kind==='flavor'){deliver(genFlavor());}
+ else if(e.kind==='mail'){deliver(e.m);}
+ else if(e.kind==='remind'&&a&&(a.stage==='invite'||a.stage==='offer')){
+  const iv=a.stage==='invite';
+  addMail({from:'오퍼로',subject:`[리마인드] ${a.p.co} ${iv?'면접':'입사 회신'} 기한이 내일까지입니다`,body:`${a.p.co} · ${a.p.title}\n\n${iv?'면접':'입사 의사 회신'} 기한: ${fmtD(a.deadline)}\n기한이 지나면 자동으로 ${iv?'불참':'포기'} 처리됩니다.`,type:iv?'invite':'offer',app:a.id});
+ }else if(e.kind==='ceo'){
+  const j=S.job;if(j&&j.co===e.co&&j.start===e.start)addMail({from:`${e.co} 대표`,subject:'[전사] 다음 달, 우리는 다음 단계로 갑니다',body:'여러분 덕분에 여기까지 왔습니다.\n시리즈 B 투자가 사실상 확정 단계입니다.\n조금만 더 힘내 주세요. 곧 모두가 보상받을 겁니다.\n\n(왜인지 불안하다.)'});
+ }else if(e.kind==='shady'){
+  const j=S.job,here=j&&j.co===e.co&&j.start===e.start,c=co(e.co);
+  if(here&&j.shady==='boom'){
+   const bonus=Math.round(j.salary*0.15/100)*100;S.money+=bonus;j.shady=null;if(c)c.shady=false;
+   addMail({from:`${e.co} 대표`,subject:'[전사] 시리즈 B 투자 유치 완료!',body:`진짜로 해냈습니다!\n투자가 들어왔고, 그동안 버텨 준 분들께 스톡옵션 일부를 현금으로 보상합니다.\n\n(+${bonus.toLocaleString()}만원. 의심했던 게 조금 미안하다.)`});
+   log(`${e.co}이(가) 투자 유치에 성공했다.`);
+  }else if(here){
+   const full=Math.round(j.salary/12*0.82);const owed=j.owed+Math.round(full*((S.day-j.start)%30)/30);
+   if(c)c.closed=true;S.postings=S.postings.filter(p=>p.co!==e.co);
+   endJob('폐업');log(`${e.co}이(가) 폐업했다. 하루아침에 실직자가 됐다.`);
+   if(owed>0)bill({from:`${e.co} 대표`,subject:'[전사] 회사 운영 종료 안내',body:`죄송합니다.\n투자 유치에 실패해 오늘부로 회사 운영을 종료합니다.\n밀린 급여는 반드시 해결하겠습니다.\n\n(받지 못한 돈: ${owed.toLocaleString()}만원)\n노동청에 신고하면 몇 달 뒤 일부라도 돌려받을 수 있다.`,opts:[{label:'노동청에 신고한다',hp:-5,fx:'wage',owed},{label:'그냥 잊는다',hp:-3}],def:0});
+   else addMail({from:`${e.co} 대표`,subject:'[전사] 회사 운영 종료 안내',body:'죄송합니다.\n투자 유치에 실패해 오늘부로 회사 운영을 종료합니다.'});
+   S.hp=clamp(S.hp-8,0,100);
+  }else{
+   if(c)c.closed=true;S.postings=S.postings.filter(p=>p.co!==e.co);
+   addMail({from:'전 직장 동료',subject:`${e.co} 결국 문 닫았대요`,body:'소식 들으셨어요? 결국 폐업했대요.\n남은 사람들은 월급도 못 받았다던데…\n\n빨리 나오신 거 진짜 잘하신 거예요.'});
+  }
+ }else if(e.kind==='wage'){
+  S.money+=e.amt;addMail({from:'고용노동부',subject:'[체당금] 지급 결정 안내',body:`신청하신 체불 임금에 대해 대지급금 지급이 결정되었습니다.\n\n(+${e.amt.toLocaleString()}만원. 전부는 아니지만 다행이다.)`});
+ }else if(e.kind==='mom'){
+  S.money+=50;addMail({from:'엄마',subject:'밥은 잘 챙겨 먹니',body:'요즘 많이 힘들지?\n통장에 50만원 넣어놨다. 끼니 거르지 말고.\n\n너무 조급해하지 마라.'});
+ }
+}
+
+/* ---------- jobs ---------- */
+function endJob(reason){
+ const j=S.job;if(!j)return;
+ if(reason!=='폐업'&&j.owed>0){const amt=Math.round(j.owed*0.7);sched(S.day+RI(60,120),'wage',{amt});}
+ S.history.unshift({co:j.co,tier:j.tier,title:j.title,level:j.level,salary:j.salary,start:j.start,end:S.day,reason,kws:j.kws});
+ S.job=null;UI.dirty=true;
+}
+function acceptOffer(a){
+ const c=co(a.p.co),prev=S.job?S.job.salary:(S.history.length?S.history[0].salary||0:0);
+ if(S.job){log(`${S.job.co}에 사직서를 냈다.`);endJob('이직');}
+ S.job={co:c.name,tier:c.tier,title:a.p.title,level:a.p.level,branch:a.p.branch,salary:a.p.salary,start:S.day,wlb:c.wlb,env:c.env,growth:c.growth,culture:c.culture,kws:a.p.kws,leaves:0,leaveUntil:0};
+ if(a.p.branch&&!S.branch)S.branch=a.p.branch;
+ c.known=true;a.stage='hired';S.stats.moves++;S.leave=15;
+ if(c.shady&&!c.closed){const end=S.day+RI(30,90);S.job.shady=Math.random()<0.8?'bust':'boom';S.job.owed=0;
+  sched(S.day+Math.round((end-S.day)*0.45),'ceo',{co:c.name,start:S.day});sched(end,'shady',{co:c.name,start:S.day});}
+ if(S.action&&S.action.type==='trip')S.action=null;
+ const diff=(n,dv,tv)=>{const g=tv-dv;return `• ${n}: 리뷰 ${dv.toFixed(1)} → 실제 ${tv}점 ${g>=0.8?'(생각보다 좋다)':g<=-0.8?'(속았다…)':'(대충 리뷰대로)'}`;};
+ addMail({from:`${c.name} 인사팀`,subject:`${S.name}님, ${c.name}에 오신 것을 환영합니다`,body:`오늘부터 ${a.p.title}(으)로 출근합니다.\n\n첫 주를 보내며 느낀 실제 분위기:\n${diff('워라밸',c.dw,c.wlb)}\n${diff('근무환경',c.de,c.env)}\n${diff('성장',c.dg,c.growth)}\n\n사내 문화는 '${c.culture}' 중심이다.`},true);
+ log(`${c.name}에 ${a.p.title}(으)로 입사했다.`);
+ if(a.p.level===6&&c.tier===5&&!S.won){S.won=true;endGame('win');}
+ else celebrate(a,prev);
+ save();
+}
+
+/* ---------- celebration ---------- */
+function fireworks(dur,big){
+ if(document.hidden||!window.requestAnimationFrame)return;
+ const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+ const W=innerWidth,H=innerHeight,dpr=Math.min(2,window.devicePixelRatio||1);
+ const cv=document.createElement('canvas');cv.className='fx';cv.width=W*dpr;cv.height=H*dpr;cv.style.width=W+'px';cv.style.height=H+'px';
+ document.body.appendChild(cv);const g=cv.getContext('2d');g.scale(dpr,dpr);
+ const COL=['#ff5a5f','#ffb400','#3cc58d','#4f8cff','#b46bff','#ff7ac6','#ffe14d','#4fd6e8'];
+ const P=[],R=[],C=[];const G=0.06;let t0=performance.now(),last=t0,nextL=0;
+ const burst=(x,y,c)=>{const n=reduce?26:(big?90:70),ring=Math.random()<.3;
+  for(let i=0;i<n;i++){const a=Math.PI*2*i/n+Math.random()*.15,sp=ring?4.2:1+Math.random()*4.6;
+   P.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,l:1,d:.011+Math.random()*.009,c:Math.random()<.2?'#fff':c,r:1.4+Math.random()*1.8});}};
+ const launch=()=>{const x=W*(.12+Math.random()*.76),ty=H*(.12+Math.random()*.3);R.push({x,y:H+6,vx:(Math.random()-.5)*1.2,vy:-Math.sqrt(2*G*(H-ty)),c:COL[Math.floor(Math.random()*COL.length)]});};
+ for(let i=0;i<(reduce?30:big?160:110);i++)C.push({x:Math.random()*W,y:-20-Math.random()*H*.6,vx:(Math.random()-.5)*2,vy:1.5+Math.random()*2.5,a:Math.random()*6,va:(Math.random()-.5)*.3,w:5+Math.random()*5,h:8+Math.random()*6,c:COL[i%COL.length]});
+ burst(W*.5,H*.32,COL[1]);if(!reduce){burst(W*.22,H*.4,COL[0]);burst(W*.78,H*.38,COL[3]);}
+ const step=now=>{const dt=Math.min(3,(now-last)/16.7),t=now-t0;last=now;
+  if(t<dur&&now>=nextL&&!reduce){launch();nextL=now+(big?220:340)+Math.random()*260;}
+  g.clearRect(0,0,W,H);
+  for(let i=R.length-1;i>=0;i--){const r=R[i];r.x+=r.vx*dt;r.y+=r.vy*dt;r.vy+=G*dt;
+   g.fillStyle=r.c;g.beginPath();g.arc(r.x,r.y,2.2,0,7);g.fill();
+   if(r.vy>=-.4){burst(r.x,r.y,r.c);R.splice(i,1);}}
+  g.globalCompositeOperation='lighter';
+  for(let i=P.length-1;i>=0;i--){const p=P[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=Math.pow(.97,dt);p.vy=p.vy*Math.pow(.97,dt)+G*.55*dt;p.l-=p.d*dt;
+   if(p.l<=0){P.splice(i,1);continue;}g.globalAlpha=Math.min(1,p.l*1.4);g.fillStyle=p.c;g.beginPath();g.arc(p.x,p.y,p.r,0,7);g.fill();}
+  g.globalCompositeOperation='source-over';
+  for(let i=C.length-1;i>=0;i--){const q=C[i];q.x+=(q.vx+Math.sin(q.a)*.6)*dt;q.y+=q.vy*dt;q.a+=q.va*dt;
+   if(q.y>H+20){if(t<dur*.6){q.y=-20;q.x=Math.random()*W;}else{C.splice(i,1);continue;}}
+   g.globalAlpha=1;g.save();g.translate(q.x,q.y);g.rotate(q.a);g.scale(1,Math.cos(q.a*2));g.fillStyle=q.c;g.fillRect(-q.w/2,-q.h/2,q.w,q.h);g.restore();}
+  g.globalAlpha=1;
+  if(t<dur||P.length||R.length||C.length)requestAnimationFrame(step);else cv.remove();};
+ requestAnimationFrame(step);
+ try{navigator.vibrate&&navigator.vibrate(big?[40,60,40,60,120]:[30,50,30]);}catch(e){}
+}
+function celebrate(a,prev){
+ const c=co(a.p.co),sal=a.p.salary,n=S.history.length+1;
+ let up='';
+ if(prev){const d=sal-prev;up=d>=0?`<div class="cele-up">▲ ${d.toLocaleString()}만원 (+${Math.round(d/prev*100)}%)</div>`:`<div class="cele-up dn">▼ ${(-d).toLocaleString()}만원 · 대신 다른 걸 얻었다</div>`;}
+ else up=`<div class="cele-up">첫 연봉</div>`;
+ const h=`<div class="cele"><div class="cele-stamp">${prev?'이직 성공':'취업 성공'}</div>
+  <h2>${esc(c.name)}</h2><div class="ct">${esc(a.p.title)}</div>
+  <div class="cele-sal">${sal.toLocaleString()}<small> 만원</small></div>${up}
+  <div class="cele-tags"><span class="chip on">${TIER[c.tier]}</span><span class="chip">${LV[a.p.level-1]}</span><span class="chip">${n}번째 회사</span></div></div>
+  <div class="btns" style="margin-top:16px"><button class="btn" data-close>출근하기</button></div>`;
+ openSheet(h,{center:true,hold:true});
+ fireworks(3400,false);
+}
+
+/* ---------- actions ---------- */
+const ACTS={
+ study:{name:'자기계발',days:10,desc:j=>`10일 · 체력 -${j?14:5} · 실무↑, 새 키워드`,hp:j=>j?14:5},
+ side:{name:'사이드 프로젝트',days:21,desc:j=>`21일 · 체력 -${j?20:7} · 포트폴리오 +1`,hp:j=>j?20:7},
+ network:{name:'네트워킹',days:3,desc:j=>`3일 · 체력 -${j?4:2} · 10만원 · 협업↑, 정보`,hp:j=>j?4:2},
+ rest:{name:'연차 휴가',days:3,desc:()=>`3일 · 연차 3개 · 체력 +24`,hp:()=>-24},
+ trip:{name:'여행',days:5,desc:()=>`5일 · 60만원 · 체력 +30`,hp:()=>-30}
+};
+function startAct(type){
+ const A=ACTS[type],j=!!S.job;
+ if(type==='rest'){if(S.leave<3)return;S.leave-=3;}
+ if(type==='trip')S.money-=60;
+ if(type==='network')S.money-=10;
+ S.action={type,start:S.day,end:S.day+A.days,per:A.hp(j)/A.days};
+ log(`${A.name} 시작.`);UI.dirty=true;save();
+}
+function finishAct(){
+ const a=S.action;S.action=null;const k=S.skill;
+ if(a.type==='study'){
+  k.prac+=(3.2+R(0,1))*Math.pow(1-k.prac/110,2);
+  const nk=T().kw.filter(x=>!myKws().includes(x));
+  if(nk.length&&Math.random()<0.6){const w=pick(nk);S.learned.push(w);log(`자기계발 완료. 실무가 늘고 '${w}'를 익혔다.`);}
+  else log('자기계발 완료. 실무가 조금 늘었다.');
+ }else if(a.type==='side'){
+  const kws=myKws();const tags=[pick(kws.length?kws:T().kw),pick(T().kw)].filter((v,i,ar)=>ar.indexOf(v)===i);
+  const q=Math.round(clamp(18+k.prac*0.6+R(0,22),10,98));
+  const name=pick(['토이 ','개인 ','오픈소스 ','실험용 ','미니 '])+pick(T().proj);
+  S.projects.unshift({id:nid(),name,tags,q,day:S.day});
+  tags.forEach(t=>{if(!S.learned.includes(t))S.learned.push(t);});
+  log(`사이드 프로젝트 '${name}' 완성 (완성도 ${q}).`);
+ }else if(a.type==='network'){
+  k.collab+=2.5*(1-k.collab/150);
+  const r=Math.random();
+  if(r<0.35){
+   const c=pick(S.companies.filter(x=>!x.insider&&!x.known));
+   if(c){c.insider=true;addMail({from:'대학 선배',subject:`${c.name} 얘기 들었어?`,body:`어제 커피 고마웠어.\n말한 ${c.name} 말인데, 거기 다니는 친구 말로는\n워라밸 ${c.wlb}점, 근무환경 ${c.env}점, 성장 ${c.growth}점 정도래.\n분위기는 완전 '${c.culture}' 쪽이고.${c.shady?'\n\n근데 거기 요즘 월급 밀린다는 소문이 있더라. 연봉만 보고 가지 마.':''}\n\n참고만 해!`});}
+  }else if(r<0.55&&yrs()>=1)headhunter();
+  log('네트워킹을 했다. 아는 사람이 늘었다.');
+ }else if(a.type==='rest')log('연차를 쓰고 푹 쉬었다.');
+ else if(a.type==='trip')log('여행에서 돌아왔다. 머리가 맑다.');
+ UI.dirty=true;
+}
+
+function headhunter(){
+ const pl=plevel();const L=clamp(pl+(Math.random()<0.4?1:0),2,6);
+ const t=clamp(Math.max(maxTier(),2)+RI(0,1),2,5);
+ const p=genPosting({L,t});
+ addMail({from:'헤드헌터 김 이사',subject:`[포지션 제안] ${p.co} ${p.title}`,body:`안녕하세요, ${S.name}님.\n링크드 프로필을 보고 연락드립니다.\n\n${TIER[p.tier]} ${p.co}에서 ${p.title} 포지션을 비공개로 채용 중입니다.\n• 연봉: ${p.salary.toLocaleString()}만원 내외\n• 우대: ${p.kws.join(', ')}\n\n관심 있으시면 회신 부탁드립니다. 서류는 제가 바로 넘기겠습니다.`,type:'hh',post:p});
+}
+
+/* ---------- money: lifestyle creep and big life bills ---------- */
+// living cost drifts toward 160 + 30% of take-home pay; it rises fast and falls slowly
+function monthly(){
+ const j=S.job;if(S.life==null)S.life=160;
+ if(j&&!j.leaveUntil){const net=j.salary/12*0.82,tg=160+0.3*Math.max(0,net-160);S.life+=(tg-S.life)*(tg>S.life?0.25:0.08);}
+ else S.life+=(160-S.life)*0.08;
+ S.life=Math.max(160,S.life);
+ S.money-=Math.round(S.life);
+ lifeEvents();
+}
+function bill(m){m.type='bill';m.deadline=S.day+7;addMail(m);sched(m.deadline+1,'billExp',{mail:m.id,exact:true});}
+function payBill(m,i,auto){
+ const o=m.opts[i];m.done=true;m.pick=i;
+ S.money+=o.money||0;S.hp=clamp(S.hp+(o.hp||0),0,100);
+ if(o.fx==='small')S.life=Math.max(160,S.life-30);
+ if(o.fx==='car')S.car=true;
+ if(o.fx==='wage')sched(S.day+RI(60,120),'wage',{amt:Math.round(o.owed*0.7)});
+ if(o.fx==='wed')S.life+=50;
+ if(o.fx==='home'){S.home=true;S.homeVal=(S.homeVal||0)-o.money;S.life=Math.max(160,S.life-40);}
+ log(`${m.subject.replace(/^\[[^\]]+\] /,'')}: ${o.label}${auto?' (기한이 지나 자동 처리)':''}`);UI.dirty=true;
+}
+function lifeEvents(){
+ const y=S.day/365,j=S.job;S.ev=S.ev||{};
+ const rk='rent'+Math.floor(S.day/730);
+ if(!S.home&&S.day>=730&&!S.ev[rk]){S.ev[rk]=1;const x=Math.round((800+S.life*4)/100)*100;
+  bill({from:'집주인',subject:'[전세] 계약 갱신 안내',body:`계약 만료가 다가와 연락드립니다.\n요즘 시세가 많이 올라서 보증금을 ${x.toLocaleString()}만원 올려 주셔야 할 것 같아요.\n\n어려우시면 다른 집을 알아보셔도 됩니다.\n(작은 집으로 옮기면 이사비가 들고 지치지만, 생활비가 줄어듭니다.)`,opts:[{label:'올려 준다',money:-x},{label:'작은 집으로 이사',money:-150,hp:-8,fx:'small'}],def:1});return;}
+ if(j&&!S.ev.car&&y>=2&&Math.random()<0.04){S.ev.car=1;
+  bill({from:'입사 동기 단톡방',subject:'다들 차 뽑았더라',body:'동기들이 하나둘 차를 샀다.\n주말에 어디든 갈 수 있으면 확실히 덜 지치긴 하겠지.\n\n(차가 있으면 주말 체력 회복이 늘어납니다.)',opts:[{label:'중형차 계약',money:-2800,fx:'car'},{label:'아직은 대중교통',money:0}],def:1});return;}
+ if(j&&!S.ev.wed&&y>=4&&Math.random()<0.03){S.ev.wed=1;
+  bill({from:'연인',subject:'우리 이제 날 잡을까?',body:'만난 지도 꽤 됐잖아.\n식을 크게 할지, 둘이서 조촐하게 할지 같이 정하자.\n\n(둘이 살면 생활비가 조금 늘어납니다.)',opts:[{label:'식 올리기',money:-3000,hp:12,fx:'wed'},{label:'스몰웨딩',money:-800,hp:6,fx:'wed'}],def:1});return;}
+ if(y>=3&&(S.ev.hosp||0)<3&&Math.random()<0.015){S.ev.hosp=(S.ev.hosp||0)+1;const x=RI(4,12)*100;
+  bill({from:'엄마',subject:'아빠가 입원하셨다',body:`놀라지 말고 들어라.\n아빠 검사 결과가 안 좋아서 입원하셨다.\n병원비가 ${x.toLocaleString()}만원쯤 나온다는구나.\n\n너한테 이런 말 해서 미안하다.`,opts:[{label:'전부 보낸다',money:-x},{label:'반만 보낸다',money:-Math.round(x/2),hp:-10}],def:0});return;}
+ if(!S.home&&!S.ev.apt&&S.money>=15000&&Math.random()<0.1){S.ev.apt=1;const x=Math.round(S.money*0.7/100)*100;
+  bill({from:'청약홈',subject:'[청약] 당첨을 축하드립니다',body:`신청하신 아파트 청약에 당첨되었습니다.\n계약금과 중도금으로 ${x.toLocaleString()}만원이 필요합니다.\n\n(내 집이 생기면 전세 갱신이 사라지고 생활비가 줄어듭니다. 집값은 순자산에 포함됩니다.)`,opts:[{label:'계약한다',money:-x,fx:'home'},{label:'포기한다',money:0}],def:1});}
+}
+
+/* ---------- daily tick ---------- */
+function tick(){
+ S.day++;
+ const wd=dateOf(S.day).getDay(),weekend=wd===0||wd===6;
+ const j=S.job,k=S.skill;
+ let onLeave=false;
+ if(j){
+  if(j.leaveUntil){
+   onLeave=true;S.hp+=1.6;S.blankDays++;
+   if(S.day>=j.leaveUntil){
+    j.leaveUntil=0;
+    if(j.leaves>=2){const n=j.co;endJob('권고사직');addMail({from:`${n} 인사팀`,subject:'면담 결과 안내',body:'두 차례 휴직 이후 면담 결과를 안내드립니다.\n\n회사는 귀하의 건강을 위해 계약을 종료하는 것이 맞다고 판단했습니다.\n그동안 수고 많으셨습니다.'});log(`${n}에서 권고사직 처리됐다.`);if(!S.over&&S.history.filter(h=>h.reason==='권고사직').length>=3)endGame('rep');}
+    else{addMail({from:`${j.co} 인사팀`,subject:'복직 안내',body:'휴직 기간이 종료되었습니다.\n내일부터 정상 출근 바랍니다.\n\n무리하지 마세요. 한 번 더 쓰러지면 회사도 어쩔 수 없습니다.'});log('휴직이 끝나 복직했다.');}
+   }
+  }else{
+   S.careerDays++;S.blankDays=Math.max(0,S.blankDays-0.3);
+   const ten=(S.day-j.start)/365;
+   const resting=S.action&&S.action.type==='rest';
+   const drain=(weekend||resting)?0:(0.4+(5-j.wlb)*0.4)*(1+ten*0.15)*0.8;
+   const regen=weekend?j.env*0.9+(S.car?1:0):j.env*0.04;
+   S.hp+=regen-drain;
+   const g=j.growth;
+   k.prac+=0.012*g*(1-k.prac/140);
+   k.collab+=0.008*g*(1-k.collab/140);
+   k.lead+=(j.level>=3?0.008*g*(S.branch==='m'?1.6:0.7):0.0015*g)*(1-k.lead/140);
+   const td=S.day-j.start;
+   if(td%30===0){const full=Math.round(j.salary/12*0.82);
+    if(j.shady==='bust'){const pay=Math.round(full*0.5);S.money+=pay;j.owed+=full-pay;
+     addMail({from:`${j.co} 경영지원팀`,subject:'[공지] 이번 달 급여 지급 일정 안내',body:`회사 사정으로 이번 달 급여의 50%만 우선 지급합니다.\n나머지는 투자금이 들어오는 대로 바로 지급하겠습니다.\n\n양해 부탁드립니다.\n\n(밀린 월급: ${j.owed.toLocaleString()}만원)`});}
+    else S.money+=full;}
+   if(td%150===0){
+    const q=Math.round(clamp(22+g*9+R(0,15)+k.prac*0.15,10,98));
+    const pn=`${j.co} `+pick(['서비스 리뉴얼','신규 런칭','고도화 프로젝트','마이그레이션','대형 캠페인','해외 진출']);
+    S.projects.unshift({id:nid(),name:pn,tags:sample(j.kws,2),q,day:S.day});log(`회사 프로젝트 '${pn}'을 마쳤다 (완성도 ${q}).`);
+   }
+   if(td%365===0){
+    S.leave=15;
+    const pl=plevel();
+    if(pl>j.level&&Math.random()<0.12+g*0.07){
+     j.level++;j.title=titleOf(j.level,j.level>=5?(S.branch||'ic'):null);j.salary=Math.round(j.salary*1.15/100)*100;
+     addMail({from:`${j.co} 인사팀`,subject:'[인사] 연봉 계약 결과 안내',body:`올해 평가 결과를 안내드립니다.\n\n축하합니다. ${j.title}(으)로 승진하셨습니다.\n연봉: ${j.salary.toLocaleString()}만원`});log(`${j.title}(으)로 승진했다!`);
+    }else{
+     const r=[1.0,1.02,1.03,1.05][RI(0,3)];j.salary=Math.round(j.salary*r/10)*10;
+     addMail({from:`${j.co} 인사팀`,subject:'[인사] 연봉 계약 결과 안내',body:`올해 평가 결과를 안내드립니다.\n\n연봉 인상률: ${Math.round((r-1)*100)}%\n연봉: ${j.salary.toLocaleString()}만원\n\n${r<=1.02?'회사 사정이 어려워 양해 부탁드립니다.':'내년에도 잘 부탁드립니다.'}`});
+    }
+   }
+   if(!weekend&&Math.random()<0.012){
+    if(j.wlb<=2&&Math.random()<0.5)sched(S.day,'mail',{m:{from:'팀장님',subject:'이번 주말에 잠깐 나올 수 있어요?',body:'급한 건이 생겨서요.\n오래 안 걸릴 거예요. (아마도)\n\n(주말을 반납했다. 체력 -5)',hp:-5}});
+    else sched(S.day,'mail',{m:{from:`${j.co} 전사공지`,subject:pick(['[전사] 분기 타운홀 안내','[인사] 연말정산 서류 제출 요청','[총무] 사무실 에어컨 점검 안내','[보안] 정기 보안 교육 이수 요망','[복지] 이번 달 생일자 케이크 안내','[전사] 사내 체육대회 참가 신청','[IT] 비밀번호 변경 기한 안내','[인사] 조직 개편 안내']),body:'사내 공지입니다.\n자세한 내용은 사내 메신저를 확인하세요.'}});
+   }
+   if(S.hp<=0){
+    S.hp=0;j.leaves++;S.stats.leaves++;j.leaveUntil=S.day+45;S.action=null;(S.leaveLog=S.leaveLog||[]).push(S.day);
+    addMail({from:`${j.co} 인사팀`,subject:'[인사] 휴직 발령 안내',body:`${S.name}님은 건강상의 이유로 오늘부로 45일간 휴직 처리됩니다.\n\n휴직 기간은 경력으로 인정되지 않습니다.\n휴직 이력은 3년 동안 서류 심사에 남습니다.\n푹 쉬고 돌아오세요.`});
+    log('과로로 쓰러졌다. 45일간 강제 휴직.');
+   }
+  }
+ }else{S.hp+=0.8;S.blankDays++;}
+ if(S.day%30===0)monthly();
+ if(S.money<0){S.hp-=0.25;if(S.day>=30&&S.day-S.momDay>150){S.momDay=S.day;sched(S.day+RI(2,6),'mom');}}
+ if(!S.over){
+  S.debtDays=S.money<=-1000?(S.debtDays||0)+1:0;
+  if(S.debtDays===30)addMail({from:'새솔은행',subject:'[연체] 마이너스 통장 한도 초과 안내',body:'잔고가 -1,000만원 아래로 내려간 지 한 달이 되었습니다.\n이대로 두 달이 더 지나면 더는 버티기 어렵습니다.'});
+  if(S.debtDays>=90)endGame('home');else if(S.day>=7300)endGame('retire');
+ }
+ S.hp=clamp(S.hp,0,100);
+ for(const key in k)k[key]=clamp(k[key],0,100);
+
+ if(S.action&&!onLeave){
+  S.hp=clamp(S.hp-S.action.per,0,100);
+  if(S.day>=S.action.end)finishAct();
+ }
+ runDue();
+
+ const before=S.postings.length;
+ S.postings=S.postings.filter(p=>p.until>=S.day);
+ if(S.postings.length!==before)UI.dirty=true;
+ if(S.postings.length<5||(S.postings.length<12&&Math.random()<0.4)){S.postings.unshift(genPosting());UI.dirty=true;}
+
+ const y=yrs();
+ if(y>=2&&Math.random()<0.003*(1+y/5))headhunter();
+ if(Math.random()<0.14)sched(S.day,'flavor');
+
+ const pl=plevel();
+ if(pl>S.lastPL){S.lastPL=pl;log(`커리어 레벨 상승: ${LV[pl-1]} (${titleOf(pl,S.branch)})`);}
+ if(yrs()>=3&&!S.branch&&!S.branchAsked){S.branchAsked=true;setTimeout(showBranch,50);}
+ if(S.day%3===0)save();
+}
+
+/* ---------- everyday mail (family, friends, ads) ---------- */
+const FRIENDS=['민수','지은','현우','서연','준호','하늘','도윤','수빈','태양','예린'];
+const TIPS=[
+ ['연봉 협상 꿀팁 3가지','1. 먼저 숫자를 말하지 마세요.\n2. 오퍼는 여러 개일수록 좋습니다.\n3. 체력이 연봉보다 중요합니다.'],
+ ['면접관이 실제로 보는 것','면접관은 답의 정답보다 "우리 회사랑 맞는 사람인가"를 봅니다.\n리뷰를 꼼꼼히 읽으세요.'],
+ ['리뷰를 믿어도 될까?','리뷰 수가 적은 회사는 점수가 크게 튈 수 있습니다.\n선배나 지인에게 직접 물어보는 게 가장 정확합니다.'],
+ ['잦은 이직, 괜찮을까?','1년도 안 돼 옮긴 이력이 쌓이면 서류에서 불리해집니다.\n옮길 땐 확실히 올라가는 자리로.'],
+ ['공백기를 줄이는 법','공백이 길어질수록 서류에서 감점됩니다.\n사이드 프로젝트로 공백을 설명할 거리를 만드세요.'],
+ ['번아웃 자가진단','주말에 쉬어도 피곤하다면 위험 신호입니다.\n연차는 쓰라고 있는 겁니다.']
+];
+function genFlavor(){
+ const j=S.job,mo=dateOf(S.day).getMonth()+1,fr=pick(FRIENDS),y=yrs(),last=S.history[0],fam=S.day>=30;
+ const L=[
+  [3,fam,()=>({from:'엄마',subject:pick(['밥은 잘 챙겨 먹니','반찬 보냈다','택배 왔니?']),body:'반찬 좀 싸서 보냈다.\n냉장고에 바로 넣고, 라면만 먹지 말고.\n\n(집밥 덕분에 기운이 난다. 체력 +3)',hp:3})],
+  [2,fam,()=>({from:'엄마',subject:'전화 좀 받아라',body:'왜 이렇게 전화를 안 받니.\n바쁜 건 아는데 가끔은 목소리 좀 들려줘라.'})],
+  [1,fam,()=>({from:'아빠',subject:'아빠다',body:'문자 보내는 법 동생한테 배웠다.\n힘들면 언제든 내려와라.\n\n이상.'})],
+  [2,fam&&!j,()=>({from:'동생',subject:'요즘 뭐 해?',body:'엄마가 자꾸 나한테 너 요즘 뭐 하냐고 물어봄.\n나도 모른다고 했음. 연락 좀 해 ㅋㅋ'})],
+  [2,fam&&!!j,()=>({from:'동생',subject:'월급날이지?',body:'월급 들어왔으면 치킨 한 마리만…\n\n(마음 약해서 사 줬다. -3만원)',money:-3})],
+  [3,mo===2||mo===9,()=>({from:'할머니',subject:'명절에 못 와도 괜찮다',body:'바쁘면 안 와도 된다.\n대신 용돈 조금 보냈으니 맛있는 거 사 먹어라.\n\n(+20만원)',money:20})],
+  [3,mo===12,()=>({from:'동창회',subject:'[동창회] 연말 모임 안내',body:'올해도 모입니다.\n다들 어디 다니는지 근황 토크 예정.\n\n'+(j?`"${j.co} 다닌다"고 말할 수 있겠다.`:'뭐라고 말하지…')})],
+  [1,true,()=>({from:fr,subject:`[청첩장] ${fr} 결혼합니다`,body:`드디어 간다!\n시간 되면 꼭 와 줘.\n\n(축의금을 보냈다. -10만원)`,money:-10})],
+  [2,!j,()=>({from:'단톡방',subject:`${fr} 이번에 대기업 붙었대`,body:`축하한다고 이모티콘을 보냈다.\n괜히 마음이 무겁다.\n\n(체력 -2)`,hp:-2})],
+  [2,true,()=>({from:fr,subject:'야 언제 한잔해',body:'얼굴 본 지 백만 년이다.\n다음 주 금요일 어때?'})],
+  [2,!!j,()=>({from:'모아카드',subject:'[모아카드] 이번 달 결제 예정 금액 안내',body:'이번 달 결제 예정 금액을 확인하세요.\n\n생각보다 많이 썼다.'})],
+  [2,!!j,()=>({from:`${j?j.co:''} 복지팀`,subject:'[건강검진] 올해 검진 대상자입니다',body:S.hp<40?'검진 결과: "과로 소견. 충분한 휴식이 필요합니다."\n\n의사 선생님 표정이 심각했다.':'검진 결과: 특이사항 없음.\n\n다행이다.'})],
+  [2,true,()=>({from:'핏짐 휘트니스',subject:'[광고] 3개월 등록 시 1개월 무료',body:'올해는 진짜 운동하자!\n\n(작년에도 이 메일을 받았다.)'})],
+  [3,true,()=>({from:'오퍼로',subject:`[오퍼로] ${S.name}님께 딱 맞는 공고가 도착했어요`,body:'새로 올라온 공고를 확인해 보세요.\n(이 메일은 결과 안내가 아닙니다.)'})],
+  [2,true,()=>({from:'오퍼로',subject:`[오퍼로] 기업 ${RI(2,5)}곳이 회원님의 이력서를 열람했습니다`,body:'어느 회사인지는 프리미엄 회원만 볼 수 있습니다.\n\n괜히 설렌다.'})],
+  [2,true,()=>({from:'커리어부스트',subject:pick(['[광고] 합격률 높이는 자소서 첨삭 50% 할인','[광고] 면접 1:1 코칭 마지막 모집','[광고] 포트폴리오 템플릿 무료 배포']),body:'지금 신청하면 첫 달 50% 할인!\n\n(수신 거부는 어디서 하는지 아무도 모릅니다.)'})],
+  [3,true,()=>{const t=pick(TIPS);return {from:'주간 연봉레터',subject:`[뉴스레터] ${t[0]}`,body:t[1]};}],
+  [1,S.money>2000,()=>({from:'새솔은행',subject:'[적금] 만기 안내',body:'적금이 만기되었습니다.\n이자는 생각보다 작습니다.\n\n(+5만원)',money:5})],
+  [2,!!last,()=>({from:`전 직장 동료 ${fr}`,subject:'그 팀장님 퇴사하셨대요',body:`${last?last.co:''} 소식이에요.\n그 팀장님 결국 나가셨어요. 다들 술렁술렁.\n\n가끔 연락해요!`})],
+  [2,true,()=>({from:'번개배송',subject:'[배송완료] 주문하신 상품이 문 앞에 도착했습니다',body:'고객님의 상품이 문 앞에 배송되었습니다.\n\n(뭘 시켰는지 기억이 안 난다.)'})],
+  [1,true,()=>({from:'고객센터',subject:'[긴급] 회원님 계정이 정지될 예정입니다',body:'아래 링크를 눌러 본인 인증을 진행하세요.\n\n(누가 봐도 피싱이다. 삭제했다.)'})],
+  [2,y<2,()=>({from:'지도교수님',subject:'졸업생 근황 조사',body:'잘 지내지?\n학과에서 졸업생 진로를 조사 중이네.\n어디서 일하는지 알려주면 고맙겠네.'})],
+  [2,y>=3,()=>({from:'동아리 후배',subject:'선배 혹시 면접 팁 좀…',body:'선배 저 이번에 첫 면접 봐요 ㅠㅠ\n뭘 준비해야 할까요?\n\n(나도 처음엔 저랬지.)'})],
+  [2,!j&&S.blankDays>30,()=>({from:'구청 일자리센터',subject:'[안내] 청년 구직활동 지원금',body:'구직 중인 청년에게 지원금을 드립니다.\n신청했더니 바로 들어왔다.\n\n(+30만원)',money:30})],
+  [1,!!j&&j.wlb<=2,()=>({from:'팀 단톡방',subject:'오늘 회식 있습니다 (전원 참석)',body:'장소는 늘 가던 곳.\n2차는 분위기 봐서.\n\n(체력 -3)',hp:-3})],
+  [1,true,()=>({from:'집주인',subject:'관리비 인상 안내',body:'다음 달부터 관리비가 조금 오릅니다.\n양해 부탁드립니다.'})],
+  [3,S.postings.some(p=>co(p.co).shady&&!co(p.co).insider),()=>{const p=S.postings.find(x=>co(x.co).shady);return {from:'단톡방',subject:`${p.co} 공고 본 사람?`,body:`${p.co} 연봉 미쳤던데ㅋㅋ\n근데 거기 작년에도 공고 계속 올리지 않았나?\n\n(누군가 "거기 좀 이상하다던데"라고 답했다.)`};}],
+ ].filter(x=>x[1]);
+ return L[wpick(L.map(x=>x[0]))][2]();
+}
+
+/* ---------- rendering ---------- */
+function statusLine(){
+ const j=S.job;
+ if(j&&j.leaveUntil)return `<b>휴직 중</b> · ${esc(j.co)} · 복직까지 ${j.leaveUntil-S.day}일`;
+ if(j)return `<b>${esc(j.title)}</b> @ ${esc(j.co)} · 근속 ${dur(S.day-j.start)}`;
+ return `<b>구직 중</b> · D+${S.day} · 공백 ${Math.round(S.blankDays)}일 · 경력 ${dur(S.careerDays)}`;
+}
+const ICON_PAUSE='<svg viewBox="0 0 16 16"><rect x="3" y="2" width="3.6" height="12" rx="1"/><rect x="9.4" y="2" width="3.6" height="12" rx="1"/></svg>',ICON_PLAY='<svg viewBox="0 0 16 16"><path d="M4 2.2v11.6a.8.8 0 0 0 1.2.7l9.4-5.8a.8.8 0 0 0 0-1.4L5.2 1.5A.8.8 0 0 0 4 2.2z"/></svg>';
+function renderHeader(){
+ const mins=Math.floor((S.frac||0)*1440);
+ $('#hDate').innerHTML=`<b>${fmtD(S.day)}</b> (${WD[dateOf(S.day).getDay()]}) <span class="clock">${String(Math.floor(mins/60)).padStart(2,'0')}:${String(mins%60).padStart(2,'0')}</span>`;
+ const hp=Math.round(S.hp);$('#hpBar').style.width=hp+'%';$('#hpNum').textContent=hp;
+ $('#hpWrap').className='bar'+(hp<25?' low':hp<55?' mid':'');
+ const m=$('#hMoney');m.textContent='₩'+won(S.money);m.classList.toggle('neg',S.money<0);
+ // bank gauge = months of living cost covered (full at 6 months)
+ const LC=Math.round(S.life||160),runway=S.money/LC;
+ $('#mBar').style.width=clamp(runway/6*100,0,100)+'%';
+ $('#mWrap').className='bar money'+(runway<1?' low':runway<3?' mid':'');
+ const j=S.job,toRent=30-(S.day%30);
+ let fl;
+ if(j&&!j.leaveUntil){
+  const net=Math.round(j.salary/12*0.82),toPay=30-((S.day-j.start)%30);
+  fl=`월급 <span class="plus">+${won(net)}</span> D-${toPay} · 생활비 <span class="minus">-${won(LC)}</span> D-${toRent} · 한 달 <span class="${net>=LC?'plus':'minus'}">${net>=LC?'+':''}${won(net-LC)}</span>`;
+ }else{
+  fl=`${j?'휴직 중 무급':'수입 없음'} · 생활비 <span class="minus">-${won(LC)}</span> D-${toRent} · ${S.money<=0?'<span class="minus">잔고 바닥</span>':`버틸 수 있는 기간 ${runway.toFixed(1)}개월`}`;
+ }
+ $('#mFlow').innerHTML=fl;
+ if(UI.lastMoney!==undefined&&UI.lastMoney!==S.money){
+  const d=S.money-UI.lastMoney,el=$('#mDelta');
+  el.textContent=(d>0?'+':'')+won(d);el.className='delta '+(d>0?'plus':'minus');void el.offsetWidth;el.classList.add('go');
+ }
+ UI.lastMoney=S.money;
+ $('#hStatus').innerHTML=statusLine();
+ if(S.speed>0)UI.lastSp=S.speed;
+ $('#hd').classList.toggle('paused',S.speed===0);
+ const ic=S.speed?'p':'r';if(UI.playIc!==ic){UI.playIc=ic;$('#play').innerHTML=S.speed?ICON_PAUSE:ICON_PLAY;}
+ $('#spHint').textContent=S.speed?`하루 = ${['','1분','20초','10초','6초','3초'][S.speed]}`:'⏸ 일시정지 중';
+ document.querySelectorAll('#speed button').forEach(b=>{b.classList.toggle('on',+b.dataset.sp===S.speed);b.classList.toggle('last',S.speed===0&&+b.dataset.sp===(UI.lastSp||1));});
+ const un=S.mails.filter(x=>!x.read).length;const bm=$('#bMail');bm.hidden=!un;bm.textContent=un;
+ const nn=S.postings.filter(p=>S.day-p.posted<=1&&!p.applied).length;const bb=$('#bBoard');bb.hidden=!nn;bb.textContent=nn;
+ document.querySelectorAll('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===UI.tab));
+}
+function meter(label,v,max){return `<div class="meter"><span>${label}</span><div class="bar"><i style="width:${clamp(v/max*100,0,100)}%"></i></div><em>${typeof v==='number'?(max===5?v:Math.round(v)):v}</em></div>`;}
+
+/* ---------- pixel character ---------- */
+function moodOf(){
+ const j=S.job,hp=S.hp;
+ if(j&&j.leaveUntil)return ['휴직 중','몸이 먼저다. 지금은 쉬는 게 일이다.','bad'];
+ if(hp<20)return ['한계','이대로면 쓰러진다. 쉬어야 한다.','bad'];
+ if(hp<40)return ['지침','다크서클이 턱까지 내려왔다.','warn'];
+ if(S.money<0)return ['돈 걱정','통장이 마이너스다…','warn'];
+ if(S.action&&(S.action.type==='trip'||S.action.type==='rest'))return ['휴가 중','아무 생각도 안 하는 중.','good'];
+ if(j&&S.day-j.start<7)return ['설렘','새 회사 첫 주. 다 신기하다.','good'];
+ if(hp<70)return ['보통','그럭저럭 버틸 만하다.',''];
+ return ['쌩쌩','오늘은 뭐든 할 수 있을 것 같다.','good'];
+}
+function doingTxt(){const a=S.action;return a?`<span class="doing">${ACTS[a.type].name} 중 · ${a.end-S.day}일 남음</span>`:'';}
+const hashN=s=>{let h=7;for(const c of String(s))h=(h*31+c.charCodeAt(0))>>>0;return h;};
+function drawChar(){
+ const cv=document.getElementById('ava');if(!cv||!S)return;
+ const t=performance.now(),j=S.job,hp=S.hp,act=S.action?S.action.type:null,leave=!!(j&&j.leaveUntil);
+ const bob=Math.floor(t/520)%2,blink=(t%3800)<140,fr=Math.floor(t/300)%4;
+ const key=[bob,blink,fr,Math.round(hp/10),j?j.co+j.level:'',act,leave,S.money<0,S.speed].join('|');
+ if(cv.dataset.k===key)return;cv.dataset.k=key;
+ const g=cv.getContext('2d');g.clearRect(0,0,24,30);
+ const P=(x,y,w,h,c)=>{g.fillStyle=c;g.fillRect(x,y,w,h);};
+ const hs=hashN(S.name),HAIR=['#2b1d16','#5a3a22','#1d1f2b','#7a4a26'][hs%4],SKIN=['#f6d3b5','#eac09a','#d9a77f'][(hs>>3)%3],style=(hs>>6)%3;
+ const dead=hp<20&&!leave,tired=hp<40,happy=hp>=70&&S.money>=0;
+ const slump=dead?1:0,dy=(S.speed?bob:0)+slump;
+ // shadow
+ g.fillStyle='rgba(0,0,0,.14)';g.fillRect(6,29,12,1);g.fillRect(8,28,8,1);
+ // outfit by situation
+ const L=j?j.level:0;
+ let top,pants='#2e3550',trim=null;
+ if(leave){top='#b9a6dc';pants='#b9a6dc';}
+ else if(!j)top='#6f9474';
+ else if(L>=5){top='#2b3245';pants='#2b3245';}
+ else if(L>=3)top='#f2f4f8';
+ else top='#9cc3e6';
+ // legs + shoes
+ P(8,23,4,5,pants);P(12,23,4,5,pants);P(11,23,1,5,'rgba(0,0,0,.18)');
+ P(7,28,5,1,'#1a1a22');P(12,28,5,1,'#1a1a22');
+ // torso + arms
+ P(7,14+dy,10,9,top);P(5,15+dy,2,7,top);P(17,15+dy,2,7,top);
+ P(5,22+dy,2,1,SKIN);P(17,22+dy,2,1,SKIN);
+ if(leave){for(const[x,y]of[[8,16],[13,18],[10,20],[15,15],[6,18],[17,20]])P(x,y+dy,1,1,'#f4f0fb');}
+ else if(!j){P(9,19+dy,6,3,'rgba(0,0,0,.12)');P(10,14+dy,1,3,'#f4f4f4');P(13,14+dy,1,3,'#f4f4f4');P(8,14+dy,8,1,'rgba(0,0,0,.15)');}
+ else if(L>=5){P(10,14+dy,4,4,'#f2f4f8');P(11,15+dy,2,5,'#b2322d');P(9,14+dy,1,5,'#20263a');P(14,14+dy,1,5,'#20263a');}
+ else if(L>=3){P(11,15+dy,2,6,'#3753c9');P(11,14+dy,2,1,'#2a40a0');P(9,14+dy,2,1,'#ffffff');P(13,14+dy,2,1,'#ffffff');}
+ else{P(9,14+dy,2,1,'#ffffff');P(13,14+dy,2,1,'#ffffff');for(let y=16;y<22;y+=2)P(11,y+dy,1,1,'#7aa6cf');}
+ // lanyard + badge (gold at big tech)
+ if(j&&!leave){const bc=['','#9aa3b5','#7fb5a0','#7f95ff','#3753c9','#e0a920'][j.tier];P(10,14+dy,1,4,'#c8343a');P(13,14+dy,1,4,'#c8343a');P(10,18+dy,4,3,'#ffffff');P(11,19+dy,2,1,bc);}
+ // neck + head
+ const hy=dy;P(11,13+hy,2,1,SKIN);
+ P(8,3+hy,8,10,SKIN);P(7,4+hy,10,8,SKIN);
+ // hair
+ P(7,2+hy,10,3,HAIR);P(8,1+hy,8,1,HAIR);P(7,5+hy,1,2,HAIR);P(16,5+hy,1,2,HAIR);
+ if(style===1){P(6,4+hy,1,8,HAIR);P(17,4+hy,1,8,HAIR);}
+ if(style===2){P(9,0+hy,1,1,HAIR);P(12,0+hy,1,1,HAIR);P(15,1+hy,1,1,HAIR);}
+ if(leave){P(7,1+hy,10,2,'#8f7cc6');P(16,0+hy,2,2,'#8f7cc6');P(18,2+hy,1,1,'#ffffff');}
+ // face
+ const EY=8+hy,EC='#1d1f2b';
+ const shades=act==='trip'||act==='rest';
+ if(shades){P(8,EY-1,8,2,'#111');P(12,EY-1,0,0,EC);}
+ else if(leave||dead||blink){P(9,EY+1,2,1,EC);P(13,EY+1,2,1,EC);}
+ else{P(9,EY,1,2,EC);P(14,EY,1,2,EC);}
+ if(tired&&!shades&&!leave){P(9,EY+2,2,1,'rgba(90,60,120,.45)');P(13,EY+2,2,1,'rgba(90,60,120,.45)');}
+ const MY=11+hy,MC='#7a3b2e';
+ if(dead||(tired&&!happy)){P(10,MY,1,1,MC);P(13,MY,1,1,MC);P(11,MY-1,2,1,MC);}
+ else if(happy||shades){P(10,MY-1,1,1,MC);P(13,MY-1,1,1,MC);P(11,MY,2,1,MC);if(!shades){P(8,10+hy,1,1,'#f19c9c');P(15,10+hy,1,1,'#f19c9c');}}
+ else P(11,MY,2,1,MC);
+ if(tired&&!leave){const sy=4+hy+(fr%2);P(18,sy,1,2,'#7ec8f2');P(18,sy+2,1,1,'#bfe6fb');}
+ // props
+ if(act==='study'){P(7,18+dy,10,4,'#9b5a33');P(8,18+dy,8,1,'#f5ecd8');P(12,18+dy,1,4,'#6f3e22');}
+ if(act==='side'){P(7,16+dy,10,5,'#1f2433');P(8,17+dy,8,3,fr%2?'#5fd0ff':'#4fb7e8');P(6,21+dy,12,2,'#a7afbf');}
+ if(act==='network'){P(19,19+dy,3,3,'#ffffff');P(19,19+dy,3,1,'#6b3f22');P(22,20+dy,1,1,'#ffffff');if(fr<2){P(20,16+dy-fr,1,2,'rgba(200,200,210,.8)');}}
+ if(act==='trip'){P(0,21,5,7,'#e07b39');P(1,20,3,1,'#5a3a22');P(0,24,5,1,'#b25c22');}
+ if(leave||dead){const zc=leave?'#8f7cc6':'#9aa3b5',zy=4-fr%2;P(19,zy,4,1,zc);P(21,zy+1,1,1,zc);P(20,zy+2,1,1,zc);P(19,zy+3,4,1,zc);if(fr>1){P(17,zy-3,2,1,zc);P(17,zy-2,1,1,zc);P(17,zy-1,2,1,zc);}}
+ if(j&&!leave&&S.day-j.start<7){const sp=[[2,3],[20,8],[3,14],[21,2]][fr];P(sp[0],sp[1],1,3,'#ffd34d');P(sp[0]-1,sp[1]+1,3,1,'#ffd34d');}
+ if(S.money<0&&!leave){P(1,3,4,4,'#ffffff');P(2,4,2,2,'#c93b35');P(4,7,1,1,'#ffffff');}
+}
+
+// the single most useful next move, shown on top of home
+function nextStep(){
+ const j=S.job;
+ const sealed=S.apps.filter(hidden).length;
+ const reply=S.apps.filter(a=>!hidden(a)&&(a.stage==='invite'||a.stage==='offer')).length;
+ const bills=S.mails.filter(m=>m.type==='bill'&&!m.done).length;
+ const hh=S.mails.filter(m=>m.type==='hh'&&!m.done&&!m.read).length;
+ const waiting=S.apps.filter(a=>['doc','wait','hhwait'].includes(a.stage)).length;
+ if(sealed||reply||bills||hh){const p=[];if(sealed)p.push(`결과 메일 ${sealed}통`);if(reply)p.push(`회신할 일 ${reply}건`);if(bills)p.push(`결정할 일 ${bills}건`);if(hh)p.push(`헤드헌터 제안 ${hh}건`);
+  return {cls:'urgent',ey:'지금 할 일',t:'확인할 메일이 있어요',s:p.join(' · ')+'<br>기한이 지나면 자동으로 처리돼요.',btn:['메일 확인하기','mail']};}
+ if(!j&&!waiting)return {cls:'',ey:'지금 할 일',t:S.careerDays?'다음 회사에 지원하세요':'첫 지원을 해 보세요',s:'오퍼로에서 공고를 고르고 이력서를 보내요. 여러 곳에 동시에 지원할 수 있어요.',btn:['공고 보러 가기','board']};
+ if(waiting)return {cls:'calm',ey:'답장 기다리는 중',t:`${waiting}곳의 답을 기다리는 중`,s:S.action||(j&&j.leaveUntil)?'결과는 메일로 와요.':'결과는 메일로 와요. 기다리는 동안 아래에서 할 일을 골라 스펙을 키워요.',btn:['지원 현황 보기','board-apps']};
+ if(j&&!j.leaveUntil)return {cls:'calm',ey:'다음 단계',t:'더 좋은 자리를 노려볼까요?',s:'공고는 매일 올라와요. 회사에 다니면서도 지원할 수 있어요.',btn:['공고 보기','board']};
+ return null;
+}
+function renderHome(){
+ const j=S.job;let h='';
+ if(S.speed===0)h+=`<button class="pausebar" data-play>${ICON_PLAY} 시간이 멈춰 있어요 · 눌러서 다시 진행</button>`;
+ const md=moodOf();
+ h+=`<section class="card mecard"><div class="avatar"><canvas id="ava" width="24" height="30" aria-label="내 캐릭터"></canvas></div><div style="min-width:0"><div class="eyebrow">${esc(S.name)} · ${esc(titleOf(plevel(),S.branch))}</div><div class="mood ${md[2]}" id="moodT">${md[0]}</div><div class="sub" id="moodS">${md[1]}</div><div id="moodA">${doingTxt()}</div></div></section>`;
+ const n=nextStep();
+ if(n)h+=`<section class="card hero ${n.cls}"><div class="eyebrow">${n.ey}</div><h2>${n.t}</h2><div class="sub">${n.s}</div>${n.btn?`<button class="btn" data-go="${n.btn[1]}">${n.btn[0]}</button>`:''}</section>`;
+ if(j){
+  h+=`<section class="card"><div class="eyebrow">지금 다니는 곳 · ${TIER[j.tier]}</div><h2>${esc(j.co)}</h2><div class="sub">${esc(j.title)} · 연봉 <span class="num">${j.salary.toLocaleString()}</span>만원 · 연차 ${S.leave}일 남음</div>
+  <div class="meters">${meter('워라밸',j.wlb,5)}${meter('근무환경',j.env,5)}${meter('성장',j.growth,5)}</div>
+  <div class="sub" style="margin-top:8px">워라밸이 낮을수록 평일 체력이 빨리 닳고, 오래 다닐수록 더 닳습니다. 근무환경은 주말 회복량, 성장은 스펙 상승 속도를 정합니다.</div></section>`;
+ }else{
+  h+=`<section class="card"><div class="eyebrow">구직 중</div><h2>${S.careerDays?'다음 회사를 찾는 중':'첫 직장을 찾는 중'}</h2><div class="sub">공백 <span class="num" id="blankLive">${Math.round(S.blankDays)}</span>일${S.blankDays>60?' · 공백이 서류에 불리하게 작용하는 중':''} · 생활비 월 ${won(Math.round(S.life||160))}원</div></section>`;
+ }
+ const onLeave=j&&j.leaveUntil;
+ h+=`<section class="card"><div class="row between"><h3>오늘 뭐 하지</h3><span class="sub">${j?'퇴근 후에 하는 일':'시간은 많다'}</span></div>`;
+ if(onLeave){h+=`<div class="sub" style="margin-top:8px">휴직 중에는 아무것도 할 수 없다. 쉬는 것도 일이다.</div>`;}
+ else if(S.action){
+  const A=ACTS[S.action.type],tot=S.action.end-S.action.start,dn=S.day-S.action.start;
+  h+=`<div class="progress"><div class="row between"><b>${A.name}</b><span class="sub num" id="actLeft">${S.action.end-S.day}일 남음</span></div><div class="bar"><i id="actBar" style="width:${dn/tot*100}%"></i></div></div>`;
+ }else{
+  const list=j?['study','side','network','rest']:['study','side','network','trip'];
+  h+=`<div class="acts">${list.map(t=>{const A=ACTS[t];const dis=(t==='rest'&&S.leave<3)||(t==='trip'&&S.money<60);return `<button class="act" data-act="${t}"${dis?' disabled':''}><b>${A.name}</b><small>${A.desc(!!j)}</small></button>`;}).join('')}
+  ${j?`<button class="act danger" data-quit style="grid-column:1/-1"><b>퇴사하기</b><small>바로 구직 상태가 된다. 다음 회사가 정해지기 전이라면 공백이 생긴다.</small></button>`:''}</div>`;
+ }
+ h+=`</section>`;
+ h+=`<section class="card flat"><h3>기록</h3><div class="log">${S.log.slice(0,10).map(l=>`<div><time>${fmtD(l.d).slice(2)}</time><span>${esc(l.t)}</span></div>`).join('')}</div></section>`;
+ h+=`<div class="row" style="justify-content:center;gap:18px"><button class="sub" data-settings style="padding:8px;text-decoration:underline">설정</button><button class="sub" data-reset style="padding:8px;text-decoration:underline">처음부터 다시 하기</button></div>`;
+ return `<div class="stack">${h}</div>`;
+}
+
+function postCard(p){
+ const c=co(p.co),isNew=S.day-p.posted<=1;
+ const reqTxt=p.level===1?'신입':`경력 ${p.reqYears}년 이상`;
+ const mine=myKws(),dl=p.until-S.day;
+ return `<button class="card post${p.applied?' applied':''}" data-post="${p.id}">
+  <div class="row between"><span class="co">${esc(p.co)} <span class="sub">· ${c.ind}</span></span><span class="row">${isNew&&!p.applied?'<span class="new">NEW</span>':''}${p.applied?'<span class="pill acc">지원함</span>':''}<span class="tier t${p.tier}">${TIER[p.tier]}</span></span></div>
+  <div class="ptitle">${esc(p.title)}</div>
+  <div class="row between"><span class="sal"><b>${p.salary.toLocaleString()}</b>만원 · ${reqTxt}</span><span class="pill${dl<=3?' bad':''}">마감 D-${dl}</span></div>
+  <div class="rate"><span><span class="star">★ ${c.rating.toFixed(1)}</span> (리뷰 ${c.reviews})</span><span>워라밸 ${c.dw.toFixed(1)}</span><span>환경 ${c.de.toFixed(1)}</span><span>성장 ${c.dg.toFixed(1)}</span></div>
+  <div class="chips">${p.kws.map(k=>`<span class="chip${mine.includes(k)?' have':''}">#${esc(k)}</span>`).join('')}</div>
+ </button>`;
+}
+const STAGE={doc:['서류 검토중',''],invite:['면접 제안 받음','mail'],wait:['면접 결과 대기',''],hhwait:['헤드헌터 전달중',''],offer:['최종 합격','good'],hired:['입사','acc'],rejected:['불합격','bad'],ghost:['무응답 (아마도…)',''],declined:['거절함',''],expired:['기한 만료','']};
+function renderBoard(){
+ let h=`<div class="seg"><button data-seg="posts" class="${UI.boardSeg==='posts'?'on':''}">채용 공고 ${S.postings.length}</button><button data-seg="apps" class="${UI.boardSeg==='apps'?'on':''}">지원 현황 ${S.apps.length}</button></div>`;
+ if(UI.boardSeg==='posts'){
+  const list=S.postings.slice().sort((a,b)=>b.posted-a.posted);
+  h+=list.map(postCard).join('')||'<div class="empty">공고가 없습니다.</div>';
+ }else{
+  if(!S.apps.length)h+='<div class="empty">아직 지원한 곳이 없습니다.<br>공고 탭에서 첫 지원을 해 보세요.</div>';
+  h+=S.apps.slice(0,40).map(a=>{const s=hidden(a)?['결과 도착 · 메일 확인','mail']:STAGE[a.stage];return `<div class="card"><div class="row between"><b>${esc(a.p.co)}</b><span class="pill ${s[1]}">${s[0]}</span></div><div class="sub">${esc(a.p.title)} · ${a.p.salary.toLocaleString()}만원 · ${fmtD(a.day)} 지원</div></div>`;}).join('');
+ }
+ return `<div class="stack">${h}</div>`;
+}
+function relDay(d){const g=S.day-d;return g===0?'오늘':g===1?'어제':g<7?`${g}일 전`:fmtD(d).slice(5);}
+// unread result mails stay neutral so the tag never leaks the outcome
+function mailTag(m){
+ if(m.type==='bill')return m.done?['처리됨','']:['결정 필요','bad'];
+ if(m.type==='hh')return ['포지션 제안','acc'];
+ if(m.type==='invite'||m.type==='offer'||m.type==='reject'){if(!m.read)return ['결과 안내','mail'];return m.type==='invite'?['면접','mail']:m.type==='offer'?['합격','good']:['불합격',''];}
+ return null;
+}
+function renderMail(){
+ if(!S.mails.length)return '<div class="empty">메일이 없습니다.</div>';
+ return `<div class="stack"><div class="row between"><h3>받은편지함</h3><span class="sub">안 읽음 ${S.mails.filter(m=>!m.read).length}</span></div><div class="inbox">${S.mails.map(m=>{const tg=mailTag(m);return `<button class="mrow${m.read?'':' unread'}${tg&&!m.done?' imp':''}" data-mail="${m.id}"><i class="dot"></i><div style="min-width:0"><div class="from">${tg?`<span class="pill ${tg[1]}">${tg[0]}</span>`:''}${esc(m.from)}</div><div class="subj">${esc(m.subject)}</div></div><time>${relDay(m.day)}</time></button>`;}).join('')}</div></div>`;
+}
+function tnode(L,title,pl,br){const got=L<=pl&&(L<5||S.branch===br);const now=got&&(L===pl);
+ if(!got){const next=L===pl+1&&(L<5||!S.branch||S.branch===br);return `<div class="tnode lock"><div class="pip">?</div><div class="tt">???<small>${next?`다음 단계 · ${L===1?'신입 공고부터':`경력 ${REQY[L-1]}년+`}${L===4?' · 실무 35+':''}${L===5?(br==='m'?' · 리더십 35+':' · 실무 60+'):''}${L===6?(br==='m'?' · 리더십 60+':' · 실무 80+'):''}`:'아직 가보지 못한 곳'}</small></div></div>`;}
+ return `<div class="tnode${got?' got':''}${now?' now':''}"><div class="pip">${L}</div><div class="tt">${esc(title)}<small>${LV[L-1]} · ${L===1?'신입 공고부터':`경력 ${REQY[L-1]}년+`}${L===4?' · 실무 35+':''}${L===5?(br==='m'?' · 리더십 35+':' · 실무 60+'):''}${L===6?(br==='m'?' · 리더십 60+':' · 실무 80+'):''}</small></div></div>`;}
+function renderMe(){
+ const t=T(),pl=plevel(),k=S.skill;
+ let h=`<section class="card"><div class="eyebrow">${t.name} 커리어 트리</div><h2>${esc(S.name)} · ${esc(titleOf(pl,S.branch))}</h2><div class="sub">경력 ${dur(S.careerDays)} · 누적 공백 ${Math.round(S.blankDays)}일 · 이직 ${Math.max(0,S.stats.moves-1)}회</div><div class="tree">`;
+ for(let L=1;L<=4;L++){h+=tnode(L,t.t[L-1],pl);h+='<div class="tline"></div>';}
+ h+=`<div class="split"><div class="branch ${S.branch==='ic'?'pick':S.branch?'off':''}"><h4>스페셜리스트</h4>${tnode(5,t.ic[0],pl,'ic')}${tnode(6,t.ic[1],pl,'ic')}</div><div class="branch ${S.branch==='m'?'pick':S.branch?'off':''}"><h4>매니지먼트</h4>${tnode(5,t.m[0],pl,'m')}${tnode(6,t.m[1],pl,'m')}</div></div>`;
+ h+=`</div><div class="sub" style="margin-top:8px">${S.branch?'':'경력 3년이 되면 갈림길을 고르게 됩니다. '}레벨은 경력과 스펙으로 오르고, 직함은 회사가 줍니다. 목표: 글로벌 빅테크의 레벨 6.</div></section>`;
+ h+=`<section class="card"><h3>스펙</h3><div class="meters">${meter('실무',k.prac,100)}${meter('협업',k.collab,100)}${meter('리더십',k.lead,100)}</div></section>`;
+ h+=`<section class="card"><h3>이력서 키워드</h3><div class="chips" style="margin-top:8px">${myKws().map(x=>`<span class="chip">#${esc(x)}</span>`).join('')}</div></section>`;
+ h+=`<section class="card"><h3>포트폴리오 <span class="sub">${S.projects.length}개</span></h3><div class="projpick" style="margin-top:8px">${S.projects.slice(0,12).map(p=>`<div class="proj"><div class="row between"><b>${esc(p.name)}</b><span class="num sub">${p.q}</span></div><div class="chips">${p.tags.map(x=>`<span class="chip">#${esc(x)}</span>`).join('')}</div></div>`).join('')}</div></section>`;
+ const hs=[];if(S.job)hs.push(`<div class="hitem cur"><b>${esc(S.job.co)}</b> <span class="tier t${S.job.tier}">${TIER[S.job.tier]}</span><div class="sub">${esc(S.job.title)} · ${fmtD(S.job.start)} ~ 재직 중</div></div>`);
+ S.history.forEach(x=>hs.push(`<div class="hitem"><b>${esc(x.co)}</b> <span class="tier t${x.tier}">${TIER[x.tier]}</span><div class="sub">${esc(x.title)} · ${fmtD(x.start)} ~ ${fmtD(x.end)} · ${x.reason}</div></div>`));
+ h+=`<section class="card"><h3>경력 사항</h3><div class="hist" style="margin-top:8px">${hs.join('')||'<div class="sub">아직 없음. 모두 처음은 신입이다.</div>'}</div></section>`;
+ return `<div class="stack">${h}</div>`;
+}
+function render(){
+ if(!S)return;
+ renderHeader();
+ const m=$('#main');
+ m.innerHTML=UI.tab==='home'?renderHome():UI.tab==='board'?renderBoard():UI.tab==='mail'?renderMail():renderMe();
+ UI.dirty=false;
+ if(UI.tab==='home')drawChar();
+}
+function live(){
+ renderHeader();
+ const bl=$('#blankLive');if(bl)bl.textContent=Math.round(S.blankDays);
+ const mt=$('#moodT');if(mt){const md=moodOf();if(mt.textContent!==md[0]){mt.textContent=md[0];mt.className='mood '+md[2];$('#moodS').textContent=md[1];}$('#moodA').innerHTML=doingTxt();}
+ if(UI.tab==='home'&&S.action){const b=$('#actBar'),l=$('#actLeft');if(b){const tot=S.action.end-S.action.start;b.style.width=clamp((S.day+(S.frac||0)-S.action.start)/tot*100,0,100)+'%';l.textContent=(S.action.end-S.day)+'일 남음';}}
+}
+
+/* ---------- sheets ---------- */
+function openSheet(html,opts){
+ opts=opts||{};
+ const ov=$('#ov');ov.className='overlay'+(opts.center?' center':'');
+ $('#sheet').innerHTML=(opts.center?'':'<div class="grab"></div>')+html;ov.hidden=false;$('#sheet').scrollTop=0;
+ if(opts.hold&&!UI.sheetHold){UI.hold++;UI.sheetHold=true;}
+ UI.sheetLock=!!opts.lock;
+}
+function closeSheet(){
+ $('#ov').hidden=true;$('#sheet').innerHTML='';
+ if(UI.sheetHold){UI.hold--;UI.sheetHold=false;}
+ UI.sheetLock=false;UI.ctx=null;UI.dirty=true;
+}
+function sheetHd(title,sub){return `<div class="sheet-hd"><div style="min-width:0">${sub?`<div class="eyebrow">${sub}</div>`:''}<h2>${title}</h2></div><button class="x" data-close>닫기</button></div>`;}
+
+function openPost(id){
+ const p=S.postings.find(x=>x.id===id);if(!p)return;const c=co(p.co);
+ const y=yrs();const blocked=p.level===1&&y>=2;
+ const known=c.known||c.insider;
+ let h=sheetHd(esc(p.title),`${esc(p.co)} · ${TIER[p.tier]} · ${c.ind}`);
+ h+=`<div class="sec"><div class="meta"><span>${p.level===1?'신입':`경력 ${p.reqYears}년 이상`}</span><span>연봉 <span class="num">${p.salary.toLocaleString()}</span>만원</span><span>마감 ${fmtD(p.until)} (D-${p.until-S.day})</span></div></div>`;
+ h+=`<div class="sec"><div class="label"><span>회사 평점</span><span><span style="color:var(--mail)">★ ${c.rating.toFixed(1)}</span> · 리뷰 ${c.reviews}개${c.reviews<40?' · 리뷰가 적어 부정확할 수 있음':''}</span></div>
+ <div class="stats3"><div class="stat"><span>워라밸</span><b>${c.dw.toFixed(1)}</b>${known?`<s>실제 ${c.wlb}</s>`:''}</div><div class="stat"><span>근무환경</span><b>${c.de.toFixed(1)}</b>${known?`<s>실제 ${c.env}</s>`:''}</div><div class="stat"><span>성장</span><b>${c.dg.toFixed(1)}</b>${known?`<s>실제 ${c.growth}</s>`:''}</div></div></div>`;
+ h+=`<div class="sec"><div class="label">재직자 한 줄 리뷰</div><div class="reviews">${c.rv.map(r=>`<div class="review">${esc(r)}</div>`).join('')}</div></div>`;
+ h+=`<div class="sec"><div class="label"><span>우대 사항</span><span>초록색은 내가 가진 키워드</span></div><div class="chips">${p.kws.map(k=>`<span class="chip want${myKws().includes(k)?' have':''}">#${esc(k)}</span>`).join('')}</div></div>`;
+ h+=`<div class="sec">${p.applied?'<button class="btn block" disabled>이미 지원했습니다</button>':blocked?'<button class="btn block" disabled>경력 2년 이상은 신입 공고에 지원할 수 없습니다</button>':`<button class="btn block" data-apply="${p.id}">이력서 쓰고 지원하기</button>`}</div>`;
+ openSheet(h);
+}
+function openResume(id){
+ const p=S.postings.find(x=>x.id===id);
+ if(!p){openSheet(sheetHd('마감된 공고입니다','오퍼로')+'<div class="sub">고민하는 사이에 공고가 내려갔습니다. 다른 공고를 찾아보세요.</div>');return;}
+ UI.ctx={post:id,kws:[],projects:[],tone:null};
+ drawResume(true);
+}
+function drawResume(first){
+ const ctx=UI.ctx,p=S.postings.find(x=>x.id===ctx.post);
+ if(!p){closeSheet();return;}
+ const res={kws:ctx.kws,projects:ctx.projects,tone:ctx.tone};
+ const pd=clamp(sig((calcPower(p,res)-req(p))/10),0.02,0.95);const f=feel(pd);
+ const last=S.job||S.history[0];
+ let h=sheetHd('이력서 작성',`${esc(p.co)} · ${esc(p.title)}`);
+ h+=`<div class="sec"><div class="card" style="box-shadow:none"><div class="row between"><b>${esc(S.name)}</b><span class="sub">${T().name}</span></div><div class="sub">경력 ${dur(S.careerDays)}${last?` · 최근 ${esc(last.co)} ${esc(last.title)}`:' · 경력 없음'}${S.blankDays>60?` · 공백 ${Math.round(S.blankDays)}일`:''}${hops()?` · 1년 미만 이직 ${hops()}회`:''}${recentLeaves()?` · 최근 3년 휴직 ${recentLeaves()}회`:''}</div></div></div>`;
+ h+=`<div class="sec" data-sec="tone"><div class="label"><span>자기소개 한 줄</span><span>회사 분위기에 맞춰 보세요</span></div><div class="chips">${CULT.map(c=>`<button class="chip${ctx.tone===c?' on':''}" data-tone="${c}">${TONE[c]}</button>`).join('')}</div></div>`;
+ h+=`<div class="sec" data-sec="kw"><div class="label"><span>강조할 키워드</span><span>${ctx.kws.length}/3 · 우대: ${p.kws.join(', ')}</span></div><div class="chips">${myKws().map(k=>`<button class="chip${ctx.kws.includes(k)?' on':''}${p.kws.includes(k)?' hit':''}" data-kw="${esc(k)}">#${esc(k)}</button>`).join('')}</div></div>`;
+ h+=`<div class="sec" data-sec="pj"><div class="label"><span>포트폴리오 첨부</span><span>${ctx.projects.length}/2</span></div><div class="projpick">${S.projects.map(pr=>`<button class="proj${ctx.projects.includes(pr.id)?' on':''}" data-pj="${pr.id}"><div class="row between"><b>${esc(pr.name)}</b><span class="num sub">완성도 ${pr.q}</span></div><div class="chips">${pr.tags.map(x=>`<span class="chip">#${esc(x)}</span>`).join('')}</div></button>`).join('')}</div></div>`;
+ h+=`<div class="sec" data-sec="feel"><div class="card row between" style="box-shadow:none"><div><div class="eyebrow">지원 느낌</div><div class="feel" style="color:var(--${f[1]==='good'?'good':f[1]==='bad'?'bad':f[1]==='mail'?'mail':'ink'})">${f[0]}</div></div><span class="sub" style="max-width:15ch;text-align:right">제출하면 결과 메일이 올 때까지 기다려야 합니다</span></div><button class="btn block" data-submit>제출하기</button></div>`;
+ const sc=$('#sheet').scrollTop;
+ openSheet(h,{hold:true});
+ if(!first)$('#sheet').scrollTop=sc;
+}
+function openMail(id){
+ const m=S.mails.find(x=>x.id===id);if(!m)return;
+ m.read=true;UI.dirty=true;
+ if(m.app){const ap=appById(m.app);if(ap&&ap.pend){const pm=S.mails.find(x=>x.id===ap.pend);if(pm&&pm.log){log(pm.log);delete pm.log;}if(pm)pm.read=true;ap.pend=0;}}
+ if(m.log){log(m.log);delete m.log;}
+ let h=sheetHd(esc(m.subject),`${esc(m.from)} · ${fmtDW(m.day)}`);
+ h+=`<div class="mbody">${esc(m.body)}</div>`;
+ const a=m.app?appById(m.app):null;
+ if(m.type==='invite'&&a){
+  if(a.stage==='invite')h+=`<div class="sec" style="margin-top:14px"><button class="btn block" data-interview="${a.id}">면접 보러 가기 · ${fmtD(a.deadline)}까지</button></div>`;
+  else h+=`<div class="sec" style="margin-top:14px"><span class="pill">${STAGE[a.stage][0]}</span></div>`;
+ }
+ if(m.type==='offer'&&a){
+  if(a.stage==='offer'){
+   const warn=S.job?`지금 다니는 ${esc(S.job.co)}(연봉 ${S.job.salary.toLocaleString()}만원)를 그만두고 옮깁니다.`:'바로 출근합니다.';
+   h+=`<div class="sec" style="margin-top:14px"><div class="sub">${warn}</div><div class="btns"><button class="btn ghost" data-decline="${a.id}">정중히 거절</button><button class="btn" data-accept="${a.id}">입사하겠습니다</button></div></div>`;
+  }else h+=`<div class="sec" style="margin-top:14px"><span class="pill">${STAGE[a.stage][0]}</span></div>`;
+ }
+ if(m.type==='bill'){
+  if(!m.done)h+=`<div class="sec" style="margin-top:14px"><div class="sub">${fmtD(m.deadline)}까지 고르지 않으면 '${esc(m.opts[m.def].label)}'(으)로 처리됩니다.</div><div class="btns">${m.opts.map((o,i)=>`<button class="btn${i===m.opts.length-1?'':' ghost'}" data-bill="${m.id}:${i}">${esc(o.label)}${o.money?` · ${won(o.money)}`:''}</button>`).join('')}</div></div>`;
+  else h+=`<div class="sec" style="margin-top:14px"><span class="pill">선택: ${esc(m.opts[m.pick].label)}</span></div>`;
+ }
+ if(m.type==='hh'&&!m.done){
+  h+=`<div class="sec" style="margin-top:14px"><div class="btns"><button class="btn ghost" data-hhno="${m.id}">괜찮습니다</button><button class="btn" data-hhyes="${m.id}">관심 있어요</button></div></div>`;
+ }
+ openSheet(h);
+}
+
+/* ---------- interview ---------- */
+function openInterview(appId){
+ const a=appById(appId);if(!a||a.stage!=='invite')return;
+ const qs=sample(QS,2);
+ UI.iv={app:appId,step:0,score:0,qs:[{type:'c',d:qs[0]},{type:'j',kw:pick(a.p.kws)},hops()>=3?{type:'h'}:{type:'c',d:qs[1]}],react:null};
+ S.stats.interviews++;
+ drawInterview();
+}
+function drawInterview(){
+ const iv=UI.iv,a=appById(iv.app);
+ let h=`<div class="sheet-hd"><div><div class="eyebrow">${esc(a.p.co)} · ${esc(a.p.title)} 면접</div><h2>질문 ${Math.min(iv.step+1,3)} / 3</h2></div></div><div class="dots" style="margin-bottom:12px">${[0,1,2].map(i=>`<i class="${i<=iv.step?'on':''}"></i>`).join('')}</div>`;
+ if(iv.step>=3){
+  h+=`<div class="iv-q">"오늘 면접은 여기까지입니다. 결과는 추후 메일로 안내드리겠습니다."</div><div class="iv-react">문을 나서는데 심장이 아직 쿵쾅거린다.</div><button class="btn block" data-ivend>면접장 나오기</button>`;
+ }else if(iv.react){
+  h+=`<div class="iv-react" style="padding:28px 10px;font-size:15px">${esc(iv.react)}</div><button class="btn block" data-ivnext>다음</button>`;
+ }else{
+  const q=iv.qs[iv.step];
+  if(q.type==='c'){
+   const opts=shuffle(CULT);
+   h+=`<div class="iv-q">${esc(q.d.q)}</div><div class="iv-opts" style="margin-top:10px">${opts.map(c=>`<button data-ans="c:${c}">${esc(q.d.a[c])}</button>`).join('')}</div>`;
+  }else if(q.type==='h'){
+   h+=`<div class="iv-q">"이력서를 보니 1년 안에 옮기신 곳이 ${hops()}번이네요. 이유를 여쭤봐도 될까요?"</div><div class="iv-opts" style="margin-top:10px">${shuffle(HOPQ.map((o,i)=>[o,i])).map(([o,i])=>`<button data-ans="h:${i}">${esc(o.t)}</button>`).join('')}</div>`;
+  }else{
+   const prs=a.res.projects.map(proj).filter(Boolean);
+   S.projects.forEach(p=>{if(prs.length<4&&!prs.includes(p))prs.push(p);});
+   h+=`<div class="iv-q">"${esc(q.kw)} 관련해서 직접 해 본 경험이 있으면 말씀해 주세요."</div><div class="iv-opts" style="margin-top:10px">${prs.map(p=>`<button data-ans="p:${p.id}">'${esc(p.name)}' 이야기를 한다</button>`).join('')}<button data-ans="p:0">솔직히 직접 경험은 없지만, 빠르게 배우겠습니다</button></div>`;
+  }
+ }
+ openSheet(h,{center:true,hold:true,lock:true});
+}
+function answer(v){
+ const iv=UI.iv,a=appById(iv.app),q=iv.qs[iv.step];let s=0;
+ if(v.startsWith('h:')){s=HOPQ[+v.slice(2)].s(co(a.p.co).culture);}
+ else if(v.startsWith('c:')){s=v.slice(2)===co(a.p.co).culture?1:0;}
+ else{const id=+v.slice(2);if(!id)s=0.3;else{const p=proj(id);s=p&&p.tags.includes(q.kw)?(1+(p.q>=60?0.3:0)):0.15;}}
+ iv.score+=s;
+ const good=s>=0.9;
+ iv.react=Math.random()<0.7?pick(good?REACT_POS:REACT_NEU):pick(good?REACT_NEU:REACT_POS);
+ drawInterview();
+}
+function endInterview(){
+ const iv=UI.iv,a=appById(iv.app);UI.iv=null;
+ a.score=iv.score;
+ a.pInt=clamp(sig((a.pw-a.rq)/12+(iv.score-1.5)*1.1+(S.hp<30?-0.6:0)-Math.max(0,hops()-2)*0.3),0.03,0.95);
+ a.stage='wait';
+ if(Math.random()<0.05)sched(S.day+40,'ghost2',{app:a.id});
+ else sched(S.day+Math.round(2+Math.pow(Math.random(),1.4)*12),'int',{app:a.id});
+ log(`${a.p.co} 면접을 봤다. ${S.hp<30?'컨디션이 최악이었다.':'떨렸다.'}`);
+ closeSheet();save();
+}
+
+/* ---------- modals ---------- */
+function showBranch(){
+ if(S.branch)return;
+ const t=T();
+ openSheet(`<div class="sheet-hd"><div><div class="eyebrow">경력 3년 차 · 커리어 갈림길</div><h2>어느 쪽으로 갈까?</h2></div></div>
+ <div class="sub" style="margin-bottom:12px">레벨 5부터 길이 갈립니다. 고른 쪽 스펙이 승진 조건이 되고, 회사 생활에서 리더십이 쌓이는 속도도 달라집니다.</div>
+ <div class="stack"><button class="track" data-branch="ic"><b>스페셜리스트</b><small>${t.ic[0]} → ${t.ic[1]}<br>실무 실력으로 정상에. 실무 60/80 필요.</small></button>
+ <button class="track" data-branch="m"><b>매니지먼트</b><small>${t.m[0]} → ${t.m[1]}<br>사람을 이끌어 정상에. 리더십 35/60 필요.</small></button></div>`,{center:true,hold:true,lock:true});
+}
+function showConfirmQuit(){
+ openSheet(`<div class="sheet-hd"><div><div class="eyebrow">${esc(S.job.co)}</div><h2>정말 퇴사할까요?</h2></div></div><div class="sub" style="margin-bottom:14px">다음 회사가 정해지지 않았다면 오늘부터 공백이 쌓이고, 월급이 끊깁니다.</div><div class="btns"><button class="btn ghost" data-close>조금 더 버틴다</button><button class="btn bad" data-quitok>사직서 제출</button></div>`,{center:true});
+}
+function showConfirmReset(){
+ openSheet(`<div class="sheet-hd"><div><h2>처음부터 다시 할까요?</h2></div></div><div class="sub" style="margin-bottom:14px">지금까지의 커리어가 모두 사라집니다.</div><div class="btns"><button class="btn ghost" data-close>취소</button><button class="btn bad" data-resetok>새로 시작</button></div>`,{center:true});
+}
+const ENDS={win:['빅테크 엔딩','정상에 도착했다'],retire:['정년 엔딩','20년을 버텼다'],home:['본가 엔딩','본가로 돌아갔다'],rep:['평판 엔딩','업계에 소문이 났다']};
+const ended=()=>!!(S&&S.over&&S.over.kind!=='win');
+function gradeOf(){
+ const y=S.day/365,nw=S.money+(S.homeVal||0),lv=S.stats.leaves,hp=hops();
+ const parts=[['걸린 시간',`${y.toFixed(1)}년`,y<=9?3:y<=10.5?2:y<=12.5?1:0,3],['강제 휴직',`${lv}회`,lv===0?2:lv<=2?1:0,2],['순자산',won(nw)+'원',nw>=25000?2:nw>=12000?1:0,2],['1년 미만 이직',`${hp}회`,hp<=1?1:0,1]];
+ const score=parts.reduce((a,x)=>a+x[2],0);
+ return {grade:score>=7?'S':score>=5?'A':score>=3?'B':'C',score,parts};
+}
+function endGame(kind){
+ const o={kind,day:S.day,nw:Math.round(S.money+(S.homeVal||0))};
+ if(kind==='win')Object.assign(o,gradeOf());
+ S.over=o;S.speed=0;
+ if(UI.away&&UI.away.stop==null)UI.away.stop=S.day;
+ try{const r=JSON.parse(localStorage.getItem(SAVE+'_end')||'{}');if(kind!=='win'||!r.win||'CBAS'.indexOf(o.grade)>'CBAS'.indexOf(r.win))r[kind]=kind==='win'?o.grade:1;localStorage.setItem(SAVE+'_end',JSON.stringify(r));}catch(e){}
+ log(`${ENDS[kind][0]}: ${ENDS[kind][1]}.`);
+ save();setTimeout(showEnding,600);
+}
+function showEnding(){
+ const o=S.over,j=S.job,E=ENDS[o.kind],win=o.kind==='win';
+ const txt={win:`신입 공고 하나 뚫는 것도 버거웠던 ${S.name}님이\n글로벌 빅테크의 꼭대기에 도착했습니다.`,
+  retire:`20년이 흘렀습니다.\n꼭대기에는 닿지 못했지만, ${j?`${j.co}의 ${j.title}(으)로`:'구직 중인 채로'} 커리어를 마무리합니다.\n가장 높이 가 본 곳: ${TIER[maxTier()]||'없음'} · ${LV[plevel()-1]}`,
+  home:`잔고 -1,000만원으로 석 달을 버티다\n결국 짐을 싸서 본가로 내려갔습니다.\n엄마는 아무것도 묻지 않고 밥을 차려 주셨습니다.`,
+  rep:`세 번째 권고사직.\n업계는 생각보다 좁았습니다.\n이제 헤드헌터의 연락도 오지 않습니다.`}[o.kind];
+ const st=`• 지원 ${S.stats.applied}회 · 면접 ${S.stats.interviews}회 · 최종 합격 ${S.stats.offers}회\n• 거쳐 간 회사 ${S.history.length+(j?1:0)}곳 · 강제 휴직 ${S.stats.leaves}회\n• 순자산 ${won(o.nw)}원`;
+ let h=`<div class="sheet-hd"><div style="min-width:0"><div class="eyebrow">${E[0]} · ${fmtD(o.day)} · ${(o.day/365).toFixed(1)}년</div><h2>${win?`${esc(j.co)}의 ${esc(j.title)}`:E[1]}</h2></div>${win?`<div class="grade g${o.grade}">${o.grade}</div>`:''}</div>`;
+ h+=`<div class="mbody">${esc(txt)}\n\n${esc(st)}</div>`;
+ if(win)h+=`<div class="sec" style="margin-top:12px"><div class="label"><span>등급 채점</span><span>${o.score} / 8점</span></div><div class="gparts">${o.parts.map(x=>`<div><span>${x[0]}</span><b>${esc(x[1])}</b><em>${x[2]}/${x[3]}</em></div>`).join('')}</div><div class="sub" style="margin-top:6px">S 7점+ · A 5점+ · B 3점+ · 나머지 C</div></div>`;
+ h+=`<div class="btns" style="margin-top:14px">${win?'<button class="btn ghost" data-close>계속 다니기</button>':''}<button class="btn" data-resetok>새 커리어 시작</button></div>`;
+ openSheet(h,{center:true,hold:true,lock:true});
+ if(win)fireworks(6500,true);
+}
+function endRec(){
+ let r={};try{r=JSON.parse(localStorage.getItem(SAVE+'_end')||'{}');}catch(e){}
+ const ks=Object.keys(ENDS),n=ks.filter(k=>r[k]).length;if(!n)return '';
+ return `<div class="field"><span class="label">엔딩 ${n} / ${ks.length}</span><div class="chips">${ks.map(k=>`<span class="chip${r[k]?' on':''}">${r[k]?ENDS[k][0]+(k==='win'?' · '+r[k]:''):'???'}</span>`).join('')}</div></div>`;
+}
+
+/* ---------- settings & background ---------- */
+const OPT=Object.assign({bg:1,bgSp:1,noti:'imp',pauseImp:1},(()=>{try{return JSON.parse(localStorage.getItem(SAVE+'_opt')||'{}');}catch(e){return {};}})());
+function saveOpt(){try{localStorage.setItem(SAVE+'_opt',JSON.stringify(OPT));}catch(e){}}
+const isImp=m=>!!m.type||/인사팀/.test(m.from);
+function sysNote(m){try{if(OPT.noti==='off'||!(OPT.noti==='all'||isImp(m)))return;if('Notification' in window&&Notification.permission==='granted')new Notification(m.from,{body:m.subject,tag:'ijik'+m.id});}catch(e){}}
+// advance by wall-clock time at the background speed; stops at an important mail when that option is on
+function bgRun(ms){
+ if(!S||!OPT.bg||!S.speed||ended()||ms<=0)return;
+ let left=ms*SPD[OPT.bgSp]/DAYMS;
+ while(left>1e-9&&!ended()&&!(UI.away&&UI.away.stop!=null)){
+  const d=Math.min(left,0.05);left-=d;S.frac=(S.frac||0)+d;
+  if(S.frac>=1){S.frac-=1;tick();}
+  runDue();
+ }
+}
+function awaySummary(){
+ const a=UI.away;UI.away=null;if(!a||UI.sheetLock)return;
+ const days=S.day-a.from;if(days<1&&!a.n)return;
+ if(S.over&&S.over.day>=a.from)return;
+ let h=`<div class="sheet-hd"><div><div class="eyebrow">자리를 비운 동안 · ${OPT.bg&&S.speed?['','1×','3×','6×','10×','20×'][OPT.bgSp]+'로 진행':'진행 안 함'}</div><h2>${days}일이 지났어요</h2></div></div>`;
+ h+=`<div class="mbody">새 메일 ${a.n}통${a.imp.length?` · 중요 ${a.imp.length}통`:''}${a.stop!=null?`\n중요 메일이 와서 ${fmtD(a.stop)}에 멈췄어요.`:''}${a.imp.length?'\n\n'+a.imp.slice(0,5).map(x=>'• '+esc(x)).join('\n'):''}</div>`;
+ h+=`<div class="btns" style="margin-top:14px"><button class="btn ghost" data-close>닫기</button>${a.n?'<button class="btn" data-awaymail>메일함 보기</button>':''}</div>`;
+ openSheet(h,{center:true,hold:true});
+}
+function offline(){
+ if(!S.saved||ended())return;
+ UI.away={from:S.day,n:0,imp:[],stop:null};
+ bgRun(Date.now()-S.saved);
+ render();awaySummary();
+}
+function onVis(){
+ if(!S||!$('#intro').hidden)return;
+ if(document.hidden){UI.away={from:S.day,n:0,imp:[],stop:null};UI.wall=Date.now();save();}
+ else if(UI.away){if(!UI.sheetLock)bgRun(Date.now()-UI.wall);UI.wall=Date.now();UI.dirty=true;awaySummary();}
+}
+document.addEventListener('visibilitychange',onVis);
+addEventListener('pagehide',()=>{if(S)save();});
+function showSettings(){
+ const N='Notification' in window;
+ const np=!N?'이 브라우저는 알림을 지원하지 않아요':Notification.permission==='granted'?'알림 권한 허용됨':Notification.permission==='denied'?'브라우저에서 알림이 막혀 있어요':'켜면 알림 권한을 물어봐요';
+ const seg=(key,list)=>`<div class="seg">${list.map(([v,l])=>`<button data-opt="${key}:${v}" class="${String(OPT[key])===String(v)?'on':''}">${l}</button>`).join('')}</div>`;
+ let h=sheetHd('설정','이직각');
+ h+=`<div class="sec"><div class="label"><span>앱을 닫거나 다른 앱으로 가면</span></div>${seg('bg',[[1,'계속 진행'],[0,'멈춤']])}</div>`;
+ if(OPT.bg)h+=`<div class="sec"><div class="label"><span>백그라운드 속도</span><span>1×는 하루 1분</span></div>${seg('bgSp',[[1,'1×'],[2,'3×'],[3,'6×'],[4,'10×'],[5,'20×']])}</div>
+ <div class="sec"><div class="label"><span>중요 메일이 오면</span><span>결과·면접·오퍼·인사·청구</span></div>${seg('pauseImp',[[1,'멈추고 기다리기'],[0,'계속 진행']])}</div>`;
+ h+=`<div class="sec"><div class="label"><span>백그라운드 메일 알림</span><span>${np}</span></div>${seg('noti',[['off','끔'],['imp','중요 메일만'],['all','모든 메일']])}</div>`;
+ h+=`<div class="sub" style="margin:4px 0 12px">게임 화면에서 '정지'로 멈춰 두면 백그라운드에서도 멈춰 있습니다. 브라우저에서는 탭이 살아 있을 때만 알림이 오고, 완전히 닫았다면 다시 열 때 지난 시간만큼 한꺼번에 진행됩니다.</div>`;
+ h+=`<div class="btns"><button class="btn ghost" data-tut>튜토리얼 다시 보기</button><button class="btn ghost" data-reset>처음부터 다시 하기</button></div>`;
+ openSheet(h);
+}
+
+/* ---------- push ---------- */
+function pushNote(m){UI.pushQ.push(m);if(!UI.pushing)nextPush();}
+function nextPush(){
+ const m=UI.pushQ.shift();const el=$('#push');
+ if(!m){UI.pushing=false;return;}
+ UI.pushing=true;UI.pushMail=m.id;
+ $('#pushFrom').textContent=m.from+' · 지금';$('#pushSubj').textContent=m.subject;
+ el.style.top=(document.querySelector('.hd').getBoundingClientRect().bottom+8)+'px';
+ el.classList.add('show');
+ try{navigator.vibrate&&navigator.vibrate(30);}catch(e){}
+ clearTimeout(UI.pt);UI.pt=setTimeout(()=>{el.classList.remove('show');setTimeout(nextPush,380);},4500);
+}
+
+/* ---------- intro ---------- */
+function showIntro(){
+ const saved=load();
+ const el=$('#intro');el.hidden=false;
+ UI.pickTrack=UI.pickTrack||'dev';
+ el.innerHTML=`<div class="intro-in">
+  <div><div class="logo">이직<span>각</span></div><p class="tag">신입 공고 하나 뚫는 데서 시작해, 회사를 옮겨 다니며 커리어 꼭대기까지 가는 이직 시뮬레이션.</p></div>
+  ${endRec()}
+  ${saved&&saved.v===1?`<button class="btn block" data-continue>이어하기 · ${esc(saved.name)} (${fmtD(saved.day)})</button>`:''}
+  <div class="field"><label class="label" for="nm">이름</label><input id="nm" maxlength="8" placeholder="예: 김구직" value="${esc(UI.nm||'')}"></div>
+  <div class="field"><span class="label">직무</span><div class="tracks">${Object.entries(TR).map(([k,t])=>`<button class="track${UI.pickTrack===k?' on':''}" data-track="${k}"><b>${t.name}</b><small>${t.desc}</small></button>`).join('')}</div></div>
+  <ul class="rules"><li>1×에서 하루는 1분, 6×는 10초, 20×는 3초입니다. 위쪽에서 언제든 멈출 수 있어요.</li><li>결과 메일은 언제 올지 모릅니다. 끝내 안 올 수도 있어요.</li><li>워라밸은 체력 소모, 근무환경은 회복, 성장은 스펙 상승을 정합니다.</li><li>체력이 0이 되면 강제 휴직. 공백기가 생기고, 휴직 이력은 3년간 서류에 남습니다.</li><li>끝나는 길은 하나가 아닙니다. 빈털터리가 되거나 권고사직이 쌓이거나 20년이 지나도 끝나요.</li></ul>
+  <button class="btn block" data-start>${saved?'새로 시작하기':'구직 시작'}</button>
+ </div>`;
+}
+function startFromIntro(){
+ const nm=($('#nm').value||'').trim()||'김구직';
+ wipe();newGame(nm,UI.pickTrack);$('#intro').hidden=true;UI.tab='home';UI.boardSeg='posts';render();
+ let done=false;try{done=!!localStorage.getItem(SAVE+'_tut');}catch(e){}
+ if(!done)startTut();
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click',e=>{
+ const t=e.target.closest('button');
+ if(!t){if(e.target.id==='ov'&&!UI.sheetLock)closeSheet();if(e.target.closest('#push')){const m=UI.pushMail;$('#push').classList.remove('show');if(m){UI.tab='mail';render();openMail(m);}}return;}
+ const d=t.dataset;
+ if(d.tab){UI.tab=d.tab;$('#main').scrollTop=0;render();return;}
+ if(d.play!==undefined){if(!S)return;if(S.speed>0){UI.lastSp=S.speed;S.speed=0;}else S.speed=UI.lastSp||1;render();save();return;}
+ if(d.sp!==undefined){S.speed=+d.sp;render();save();return;}
+ if(d.tut!==undefined){closeSheet();UI.tab='home';render();startTut();return;}
+ if(d.go){if(d.go==='board-apps'){UI.tab='board';UI.boardSeg='apps';}else UI.tab=d.go;render();return;}
+ if(d.seg){UI.boardSeg=d.seg;render();return;}
+ if(d.post){openPost(+d.post);return;}
+ if(d.apply){openResume(+d.apply);return;}
+ if(d.close!==undefined){closeSheet();render();return;}
+ if(d.tone){UI.ctx.tone=UI.ctx.tone===d.tone?null:d.tone;drawResume();return;}
+ if(d.kw){const a=UI.ctx.kws,i=a.indexOf(d.kw);if(i>=0)a.splice(i,1);else if(a.length<3)a.push(d.kw);drawResume();return;}
+ if(d.pj){const a=UI.ctx.projects,id=+d.pj,i=a.indexOf(id);if(i>=0)a.splice(i,1);else if(a.length<2)a.push(id);drawResume();return;}
+ if(d.submit!==undefined){const ctx=UI.ctx,p=S.postings.find(x=>x.id===ctx.post);if(p&&!p.applied)submitApp(p,{kws:ctx.kws.slice(),projects:ctx.projects.slice(),tone:ctx.tone});closeSheet();UI.tab='board';render();return;}
+ if(d.mail){openMail(+d.mail);render();return;}
+ if(d.interview){closeSheet();openInterview(+d.interview);return;}
+ if(d.ans){answer(d.ans);return;}
+ if(d.ivnext!==undefined){UI.iv.react=null;UI.iv.step++;drawInterview();return;}
+ if(d.ivend!==undefined){endInterview();render();return;}
+ if(d.accept){const a=appById(+d.accept);if(a&&a.stage==='offer'){closeSheet();acceptOffer(a);UI.tab='home';render();}return;}
+ if(d.decline){const a=appById(+d.decline);if(a&&a.stage==='offer'){a.stage='declined';log(`${a.p.co} 오퍼를 거절했다.`);}closeSheet();render();return;}
+ if(d.hhyes){const m=S.mails.find(x=>x.id===+d.hhyes);if(m&&!m.done){m.done=true;const p=m.post;const res={kws:p.kws.filter(k=>myKws().includes(k)),projects:S.projects.slice(0,2).map(x=>x.id),tone:null};
+   const app={id:nid(),p,res,pw:calcPower(p,res)+6,rq:req(p),pDoc:1,stage:'hhwait',day:S.day};S.apps.unshift(app);S.stats.applied++;sched(S.day+RI(1,4),'hh',{app:app.id});log(`헤드헌터를 통해 ${p.co}에 이력서를 넘겼다.`);save();}
+   closeSheet();render();return;}
+ if(d.bill){const [id,i]=d.bill.split(':').map(Number);const m=S.mails.find(x=>x.id===id);if(m&&!m.done)payBill(m,i);save();closeSheet();render();return;}
+ if(d.opt){const [k,v]=d.opt.split(':');OPT[k]=k==='noti'?v:+v;saveOpt();
+  if(k==='noti'&&v!=='off'&&'Notification' in window&&Notification.permission==='default'){try{Notification.requestPermission().then(showSettings);}catch(e){}}
+  showSettings();return;}
+ if(d.settings!==undefined){showSettings();return;}
+ if(d.awaymail!==undefined){closeSheet();UI.tab='mail';render();return;}
+ if(d.hhno){const m=S.mails.find(x=>x.id===+d.hhno);if(m)m.done=true;closeSheet();render();return;}
+ if(d.act){startAct(d.act);render();return;}
+ if(d.quit!==undefined){showConfirmQuit();return;}
+ if(d.quitok!==undefined){log(`${S.job.co}에 사직서를 냈다.`);endJob('퇴사');if(S.action&&S.action.type==='rest')S.action=null;closeSheet();save();render();return;}
+ if(d.reset!==undefined){showConfirmReset();return;}
+ if(d.resetok!==undefined){closeSheet();wipe();S=null;showIntro();return;}
+ if(d.branch){S.branch=d.branch;log(`커리어 방향을 '${d.branch==='m'?'매니지먼트':'스페셜리스트'}'로 정했다.`);closeSheet();save();render();return;}
+ if(d.track){UI.nm=$('#nm').value;UI.pickTrack=d.track;showIntro();return;}
+ if(d.start!==undefined){startFromIntro();return;}
+ if(d.continue!==undefined){S=load();if(S.life==null)S.life=160;S.ev=S.ev||{};S.leaveLog=S.leaveLog||[];$('#intro').hidden=true;UI.tab='home';render();if(ended())showEnding();else offline();return;}
+});
+document.addEventListener('keydown',e=>{
+ if(C)return;
+ if(e.key==='Escape'&&!$('#ov').hidden&&!UI.sheetLock){closeSheet();render();}
+ if(e.code==='Space'&&S&&$('#intro').hidden&&$('#ov').hidden&&!/INPUT|TEXTAREA/.test(document.activeElement.tagName)){e.preventDefault();if(S.speed>0){UI.lastSp=S.speed;S.speed=0;}else S.speed=UI.lastSp||1;render();save();}
+});
+
+/* ---------- tutorial ---------- */
+// each step spotlights a real element; "wait" steps advance only when the player does the thing
+const TUT=[
+ {h:'이직각에 오신 걸 환영해요',b:'신입 공고 하나 뚫는 데서 시작해\n글로벌 빅테크 꼭대기까지 가는 게임이에요.\n\n1분이면 기본 흐름을 알려드릴게요.\n튜토리얼 동안 게임 시간은 멈춰 있어요.',next:'시작하기'},
+ {t:'.timebar',h:'시간 조절',b:'1×에서 게임 속 하루는 현실 1분이에요.\n기다릴 땐 빠르게, 고민될 땐 동그란 버튼으로 멈추세요.'},
+ {t:'.gauges',h:'체력과 통장',b:'일하면 체력이 줄고, 매달 생활비가 나가요.\n체력이 0이 되면 강제 휴직, 통장이 오래 바닥나면 게임이 끝나요.'},
+ {t:'#tabs [data-tab="board"]',h:'일자리 찾기',b:'채용 공고는 오퍼로 탭에 있어요.',wait:'tab:board',do:'오퍼로 탭을 눌러 보세요'},
+ {t:'#main .post:not(.applied)',h:'공고 고르기',b:'연봉·마감·회사 리뷰·우대 키워드가 보여요.\n초록색 ✓ 키워드는 내가 이미 가진 거예요.',wait:'post',do:'공고 하나를 눌러 보세요'},
+ {t:'#sheet [data-apply]',h:'리뷰는 참고만',b:'리뷰 수가 적은 회사는 실제와 다를 수 있어요.\n입사해 보기 전엔 진짜 모습을 알 수 없죠.',wait:'apply',do:'지원 버튼을 눌러 보세요'},
+ {t:'#sheet [data-sec="tone"]',h:'자기소개 톤',b:'회사 리뷰에서 분위기를 읽고 맞추면 가산점이에요.\n잘 모르겠으면 넘어가도 괜찮아요.',wait:'tone',opt:true},
+ {t:'#sheet [data-sec="kw"]',h:'키워드 고르기',b:'이력서에 강조할 키워드를 최대 3개 골라요.\n초록 테두리가 이 공고의 우대 키워드예요.\n겹칠수록 서류 통과 확률이 올라가요.',wait:'kw',do:'키워드를 하나 눌러 보세요',opt:true},
+ {t:'#sheet [data-sec="pj"]',h:'포트폴리오 첨부',b:'최대 2개까지 첨부해요.\n태그가 공고와 맞고 완성도가 높을수록 유리해요.\n포트폴리오는 사이드 프로젝트로 늘어나요.',wait:'pj',do:'포트폴리오를 눌러 첨부해 보세요',opt:true},
+ {t:'#sheet [data-sec="feel"]',h:'지원 느낌',b:'"지원 느낌"이 서류 통과 가능성이에요.\n위에서 고른 내용에 따라 바뀌어요.',wait:'submit',do:'제출해 보세요!'},
+ {t:'[data-seg="apps"]',h:'이제 기다림의 시간',b:'결과는 메일로 와요. 언제 올지 모르고,\n아예 안 올 수도 있어요.\n그래서 여러 곳에 지원해 두는 게 좋아요.'},
+ {t:'#tabs [data-tab="mail"]',h:'메일엔 기한이 있어요',b:'면접 제안, 합격 통보, 청구서에는 기한이 있어요.\n빨간 숫자가 뜨면 꼭 확인하세요.\n놓치면 자동으로 처리돼요.'},
+ {t:'#tabs [data-tab="home"]',h:'기다리는 동안',b:'그냥 기다리기만 하면 아깝죠.',wait:'tab:home',do:'홈 탭을 눌러 보세요'},
+ {t:'#main .acts',h:'스펙 키우기',b:'자기계발 → 새 키워드\n사이드 프로젝트 → 포트폴리오\n네트워킹 → 회사 내부 정보\n회사에 다니면 퇴근 후에 하는 거라 체력이 더 들어요.'},
+ {t:'#main .hero',h:'지금 할 일',b:'뭘 해야 할지 모르겠으면 맨 위 카드를 보세요.\n가장 급한 일을 알려줘요.'},
+ {t:'#tabs [data-tab="me"]',h:'커리어',b:'레벨, 키워드, 포트폴리오, 경력은 커리어 탭에서 볼 수 있어요.\n목표는 글로벌 빅테크의 레벨 6이에요.'},
+ {t:'.timebar',h:'이제 시작!',b:'속도를 골라 시간을 흘려보내세요.\n설정과 튜토리얼 다시 보기는 홈 맨 아래에 있어요.',wait:'sp',do:'원하는 속도를 눌러 보세요'}
+];
+let C=null;
+function startTut(){if(C)return;C={i:0};UI.hold++;$('#coach').hidden=false;C.iv=setInterval(coachPos,200);coachShow();}
+function endTut(){if(!C)return;clearInterval(C.iv);C=null;UI.hold--;$('#coach').hidden=true;try{localStorage.setItem(SAVE+'_tut','1');}catch(e){}if(S&&!S.speed)S.speed=UI.lastSp||1;render();}
+function coachEl(){const st=TUT[C.i];if(!st.t)return null;const el=document.querySelector(st.t);if(!el)return null;const b=el.getBoundingClientRect();return b.width&&b.height?el:null;}
+function coachShow(){
+ const st=TUT[C.i],el=coachEl();
+ if(el)el.scrollIntoView({block:'center',behavior:'smooth'});
+ const live=st.wait&&el;
+ $('#coach').classList.toggle('wait',!!live);
+ const b=$('#cBub');
+ b.innerHTML=`<div class="cstep">${C.i+1} / ${TUT.length}</div><h3></h3><p></p>${live&&st.do?`<div class="cdo">👆 ${st.do}</div>`:''}<div class="cbtns"><button class="cskip" data-cskip>${C.i===TUT.length-1?'':'튜토리얼 건너뛰기'}</button>${!live||st.opt?`<button class="btn" data-cnext>${st.next||(C.i===TUT.length-1?'시작!':'다음')}</button>`:''}</div>`;
+ b.querySelector('h3').textContent=st.h;b.querySelector('p').textContent=st.b;
+ coachPos();setTimeout(coachPos,350);
+}
+function coachPos(){
+ if(!C)return;
+ const st=TUT[C.i],el=coachEl(),W=innerWidth,H=innerHeight,set=(id,x,y,w,h)=>{const s=$(id).style;s.left=x+'px';s.top=y+'px';s.width=Math.max(0,w)+'px';s.height=Math.max(0,h)+'px';};
+ const b=$('#cBub'),bw=Math.min(340,W-24);b.style.width=bw+'px';const bh=b.offsetHeight;
+ if(!el){set('#cbT',0,0,W,H);set('#cbB',0,0,0,0);set('#cbL',0,0,0,0);set('#cbR',0,0,0,0);set('#cBlk',0,0,0,0);$('#cRing').style.display='none';
+  b.style.left=(W-bw)/2+'px';b.style.top=Math.max(12,(H-bh)/2)+'px';return;}
+ const r=el.getBoundingClientRect(),p=6;
+ const x=clamp(r.left-p,0,W),y=clamp(r.top-p,0,H),x2=clamp(r.right+p,0,W),y2=clamp(r.bottom+p,0,H);
+ set('#cbT',0,0,W,y);set('#cbB',0,y2,W,H-y2);set('#cbL',0,y,x,y2-y);set('#cbR',x2,y,W-x2,y2-y);
+ const live=st.wait;if(live)set('#cBlk',0,0,0,0);else set('#cBlk',x,y,x2-x,y2-y);
+ const rg=$('#cRing').style;rg.display='block';rg.left=x+'px';rg.top=y+'px';rg.width=(x2-x)+'px';rg.height=(y2-y)+'px';
+ let top;if(H-y2>=bh+14)top=y2+10;else if(y>=bh+14)top=y-bh-10;else top=H-bh-12;
+ b.style.top=top+'px';b.style.left=clamp((x+x2)/2-bw/2,12,W-bw-12)+'px';
+}
+function coachNext(){if(!C)return;C.i++;if(C.i>=TUT.length){endTut();return;}setTimeout(()=>{if(C)coachShow();},60);}
+// runs after the game's own click handler, so the screen has already changed
+document.addEventListener('click',e=>{
+ if(!C)return;
+ const t=e.target.closest('button');if(!t)return;const d=t.dataset;
+ if(d.cskip!==undefined){endTut();return;}
+ if(d.cnext!==undefined){coachNext();return;}
+ const st=TUT[C.i];if(!st.wait)return;
+ const ev=d.tab?'tab:'+d.tab:d.post?'post':d.apply?'apply':d.tone?'tone':d.kw?'kw':d.pj?'pj':d.submit!==undefined?'submit':(d.sp!==undefined||d.play!==undefined)?'sp':'';
+ if(ev===st.wait)coachNext();
+});
+addEventListener('resize',()=>{if(C)coachPos();});
+
+/* ---------- loop ---------- */
+const SPD=[0,1,3,6,10,20],DAYMS=60000;let last=performance.now(),lastLive=0;
+function loop(){
+ const now=performance.now(),dt=Math.min(2000,now-last);last=now;
+ if(S&&document.hidden&&$('#intro').hidden){if(UI.away&&!UI.sheetLock){const n=Date.now();bgRun(n-UI.wall);UI.wall=n;}}
+ else if(S&&UI.hold===0&&S.speed>0&&$('#intro').hidden&&!ended()){
+  S.frac=(S.frac||0)+dt*SPD[S.speed]/DAYMS;
+  let ticked=false;
+  while(S.frac>=1){S.frac-=1;tick();ticked=true;}
+  runDue();
+  if(UI.dirty&&$('#ov').hidden){render();lastLive=now;}
+  else if(ticked||now-lastLive>250){live();lastLive=now;}
+ }
+ sky();
+ if(S&&UI.tab==='home'&&!document.hidden)drawChar();
+}
+/* ---------- sky ---------- */
+const SKY_L=[[0,'#c6cce4','#dcdfec'],[4.5,'#cfd0e8','#e4dfea'],[6.5,'#f4d6c4','#eeeaf0'],[9,'#d5e5f6','#ebf0f6'],[13,'#cbe2f8','#e9f1f9'],[16.5,'#f1e0c2','#eeecef'],[18.5,'#efc3bd','#ddd5ea'],[20.5,'#c9cde6','#dcdfec'],[24,'#c6cce4','#dcdfec']];
+const SKY_D=[[0,'#060a15','#0a0f1d'],[4.5,'#11132e','#151427'],[6.5,'#2a1c29','#121829'],[9,'#0f1f39','#0d1423'],[13,'#11264a','#0e1727'],[16.5,'#2a2117','#131725'],[18.5,'#331729','#131431'],[20.5,'#0a0f22','#0b101f'],[24,'#060a15','#0a0f1d']];
+const hex=h=>[1,3,5].map(i=>parseInt(h.substr(i,2),16)),mix=(a,b,t)=>{const x=hex(a),y=hex(b);return`rgb(${x.map((v,i)=>Math.round(v+(y[i]-v)*t)).join(',')})`};
+const mqDark=matchMedia('(prefers-color-scheme: dark)');let skyKey='';
+function sky(){
+ const h=S?(S.frac||0)*24:12,th=document.documentElement.dataset.theme,dk=th?th==='dark':mqDark.matches;
+ const key=dk+':'+h.toFixed(2);if(key===skyKey)return;skyKey=key;
+ const K=dk?SKY_D:SKY_L;let i=0;while(K[i+1][0]<=h)i++;
+ const a=K[i],b=K[i+1],t=(h-a[0])/(b[0]-a[0]),st=document.getElementById('app').style,sk=document.getElementById('sky').style;
+ st.setProperty('--sky1',mix(a[1],b[1],t));st.setProperty('--sky2',mix(a[2],b[2],t));
+ // sun 6–18h on an arc, moon 19–5h; fades in/out near the horizon
+ let p,c,r;
+ if(h>=5.5&&h<=18.5){p=(h-6)/12;const f=Math.min(1,Math.max(0,Math.min(h-5.5,18.5-h)));const low=1-Math.sin(Math.PI*Math.min(1,Math.max(0,p)));
+  c=dk?`rgba(255,${Math.round(190-low*70)},${Math.round(110-low*40)},${(.16*f).toFixed(3)})`:`rgba(255,${Math.round(214-low*60)},${Math.round(140-low*50)},${(.55*f).toFixed(3)})`;r='30%';}
+ else{const hh=h>=18.5?h-18.5:h+5.5;p=hh/11;const f=Math.min(1,Math.max(0,Math.min(hh,11-hh)));
+  c=dk?`rgba(190,205,255,${(.12*f).toFixed(3)})`:`rgba(255,255,255,${(.5*f).toFixed(3)})`;r='22%';}
+ const q=Math.min(1,Math.max(0,p));
+ sk.setProperty('--gx',(8+84*q).toFixed(1)+'%');sk.setProperty('--gy',(62-Math.sin(Math.PI*q)*40).toFixed(1)+'%');sk.setProperty('--gc',c);sk.setProperty('--gr',r);
+}
+if(location.hostname==='localhost')window.__ijik={S:()=>S,tick:n=>{for(let i=0;i<n;i++)tick();render();}};
+showIntro();
+setInterval(loop,100);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>이직각 출시 플랜</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=IBM+Plex+Sans+KR:wght@400;600&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4f5f8;--surface:#fff;--ink:#141b2d;--muted:#5f6880;--line:#dde1ea;--accent:#2445d4;--soft:#e7ebfb;--bad:#c4382f;--bad-soft:#fbe6e3;--good:#16895c;--good-soft:#e1f4ec;--warn:#a86200;--warn-soft:#fbf0d9;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d121d;--surface:#161d2c;--ink:#e7ebf3;--muted:#98a2b8;--line:#283149;--accent:#8ea2ff;--soft:#1f2a4d;--bad:#ff7a70;--bad-soft:#3a1c1c;--good:#45c993;--good-soft:#173328;--warn:#f0a43a;--warn-soft:#3a2d14;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0d121d;--surface:#161d2c;--ink:#e7ebf3;--muted:#98a2b8;--line:#283149;--accent:#8ea2ff;--soft:#1f2a4d;--bad:#ff7a70;--bad-soft:#3a1c1c;--good:#45c993;--good-soft:#173328;--warn:#f0a43a;--warn-soft:#3a2d14;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.65 "IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif}
+.w{max-width:860px;margin:0 auto;padding:40px 16px 80px}
+h1,h2{font-family:"Do Hyeon",sans-serif;font-weight:400;line-height:1.2;text-wrap:balance}
+h1{font-size:34px;margin:6px 0 8px}
+h2{font-size:24px;margin:44px 0 12px}
+h3{font-size:16px;margin:0 0 4px}
+.eyebrow{font-size:12px;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.lede{color:var(--muted);margin:0 0 24px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:10px 0}
+.card p{margin:6px 0 0}
+.pick{border-left:4px solid var(--good)}
+.tag{display:inline-block;font-size:11.5px;font-weight:600;padding:1px 8px;border-radius:99px;background:var(--soft);color:var(--accent);margin-left:6px;vertical-align:2px}
+.tag.good{background:var(--good-soft);color:var(--good)}
+.tag.warn{background:var(--warn-soft);color:var(--warn)}
+.tag.bad{background:var(--bad-soft);color:var(--bad)}
+.tbl{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:600px}
+th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;color:var(--muted);font-weight:600}
+tr:last-child td{border-bottom:0}
+td:first-child{font-weight:600;white-space:nowrap}
+.phase{display:grid;grid-template-columns:86px 1fr;gap:12px;align-items:start}
+.phase .wk{font-family:"IBM Plex Mono",monospace;font-size:12.5px;color:var(--accent);font-weight:600;padding-top:2px}
+.phase ul{margin:4px 0 0}
+.flow{display:grid;gap:6px;counter-reset:f;margin:10px 0 0;padding:0;list-style:none}
+.flow li{counter-increment:f;display:grid;grid-template-columns:26px 1fr;gap:8px;margin:0}
+.flow li::before{content:counter(f);width:22px;height:22px;border-radius:50%;background:var(--soft);color:var(--accent);font:600 12px/22px "IBM Plex Mono",monospace;text-align:center}
+ul,ol{padding-left:20px}
+li{margin:4px 0}
+.muted{color:var(--muted);font-size:13.5px}
+code{font-family:"IBM Plex Mono",monospace;font-size:13px;background:var(--soft);padding:1px 5px;border-radius:4px}
+.check li{list-style:none;margin-left:-20px;padding-left:26px;position:relative}
+.check li::before{content:"";position:absolute;left:2px;top:6px;width:13px;height:13px;border:1.5px solid var(--muted);border-radius:3px}
+@media (max-width:520px){.phase{grid-template-columns:1fr;gap:2px}}
+</style>
+</head>
+<body>
+<div class="w">
+<div class="eyebrow">이직각 · 출시 계획 · 2026.11.08</div>
+<h1>이직각을 앱 스토어에 내기까지</h1>
+<p class="lede">지금 게임은 HTML 파일 하나로 되어 있습니다. 이 파일을 거의 그대로 살려서 iOS와 안드로이드 앱으로 포장하는 것이 가장 빠르고 쌉니다. 혼자 진행하면 8~10주, 그중 절반은 테스트와 심사 대기입니다.</p>
+
+<h2>1. 어떤 방식으로 앱을 만들까</h2>
+<div class="card pick"><h3>Capacitor로 포장하기<span class="tag good">추천</span></h3>
+<p>지금의 HTML, CSS, JS를 그대로 앱 안에 넣고, 알림·저장·진동 같은 기능만 네이티브 플러그인으로 연결합니다. 게임 로직을 다시 짤 필요가 없고, 코드 하나로 iOS와 안드로이드를 같이 냅니다. 이 게임은 화면이 가볍고 물리 연산도 없어서 웹뷰로도 성능 문제가 없습니다.</p></div>
+<div class="tbl"><table>
+<tr><th>방식</th><th>장점</th><th>단점</th></tr>
+<tr><td>Capacitor</td><td>지금 코드 재사용, 로컬 알림 플러그인 있음, 두 스토어 동시</td><td>Node.js 개발 환경 필요, iOS 빌드는 Mac 필요</td></tr>
+<tr><td>PWA / TWA</td><td>가장 간단, 안드로이드는 TWA로 플레이 스토어 등록 가능</td><td>iOS 앱스토어에는 못 냄, 닫힌 앱에서 알림 예약이 어려움</td></tr>
+<tr><td>Flutter / React Native</td><td>완전한 네이티브 느낌</td><td>게임 로직을 처음부터 다시 작성, 몇 달 걸림</td></tr>
+<tr><td>Unity</td><td>나중에 연출을 크게 키울 때</td><td>이 게임 규모에는 과함</td></tr>
+</table></div>
+
+<h2>2. 백그라운드 진행과 알림은 앱에서 이렇게 동작합니다</h2>
+<p>이번에 넣은 설정(백그라운드 진행 여부, 속도, 알림 범위, 중요 메일에서 멈춤)은 앱에서도 그대로 씁니다. 다만 휴대폰, 특히 iOS는 닫힌 앱이 몇 시간씩 계속 돌아가는 것을 허락하지 않습니다. 그래서 앱이 실제로 돌아가는 대신 <b>"미리 계산해서 알림만 예약"</b>하는 방식을 씁니다.</p>
+<div class="card">
+<ol class="flow">
+ <li><span>플레이어가 앱을 닫으면, 그 순간의 게임 상태를 복사해서 설정된 백그라운드 속도로 앞으로 며칠을 미리 돌려 봅니다.</span></li>
+ <li><span>그 사이에 메일이 언제 도착하는지 실제 시각으로 바꿔서, 휴대폰의 로컬 알림으로 예약합니다. 서버나 푸시 서비스는 필요 없습니다.</span></li>
+ <li><span>"중요 메일에서 멈춤"이 켜져 있으면 첫 중요 메일까지만 예약합니다. 그 이후는 플레이어가 돌아올 때까지 멈춥니다.</span></li>
+ <li><span>다시 열면 닫혀 있던 시간만큼 진짜로 진행하고, 웹 버전과 같은 "자리를 비운 동안" 요약을 보여 줍니다.</span></li>
+</ol>
+<p class="muted" style="margin-top:12px">조건이 하나 있습니다. 미리 돌린 결과와 다시 열었을 때의 결과가 같아야 알림이 거짓말을 하지 않습니다. 그래서 지금 쓰는 <code>Math.random()</code>을 저장되는 시드 기반 난수로 바꿔야 합니다. 출시 전에 꼭 해야 하는 코드 작업 중 가장 큽니다.</p>
+</div>
+<ul>
+ <li>iOS는 앱 하나가 예약할 수 있는 알림이 64개까지라, 가까운 순서로 잘라서 예약합니다.</li>
+ <li>안드로이드 13 이상은 알림 권한을 따로 물어야 합니다. 첫 결과 메일이 올 때처럼 이유가 분명한 순간에 묻는 게 허락받기 좋습니다.</li>
+ <li>웹 버전의 알림은 탭이 열려 있을 때만 옵니다. 앱 버전에서는 완전히 닫아도 옵니다.</li>
+</ul>
+
+<h2>3. 단계별 일정</h2>
+<div class="card phase"><div class="wk">1~2주</div><div><h3>게임 마무리</h3><ul>
+ <li>남은 밸런스 제안(1·3·5번) 결정, 시뮬레이션으로 다시 확인</li>
+ <li>시드 기반 난수로 교체</li>
+ <li>HTML 한 파일을 게임 로직, 화면, 저장으로 나누기 (앱 포장과 테스트가 쉬워짐)</li>
+ <li>저장 데이터에 버전 번호를 붙이고, 업데이트할 때 옛 세이브를 변환하는 코드</li>
+ <li>첫 5분 튜토리얼: 첫 지원부터 첫 결과 메일까지 안내</li>
+</ul></div></div>
+<div class="card phase"><div class="wk">3~4주</div><div><h3>앱으로 포장</h3><ul>
+ <li>Capacitor 프로젝트 만들기, 저장을 기기 저장소로 옮기기</li>
+ <li>로컬 알림 플러그인 연결, 2장의 예약 방식 구현</li>
+ <li>앱 아이콘, 스플래시, 진동, 안드로이드 뒤로 가기 버튼 처리</li>
+ <li>노치·홈 인디케이터 여백(safe area), 다크 모드, 글자 크기 확대 점검</li>
+</ul></div></div>
+<div class="card phase"><div class="wk">5~7주</div><div><h3>테스트</h3><ul>
+ <li>안드로이드: 개인 개발자 계정은 테스터 12명 이상이 14일 동안 비공개 테스트를 해야 정식 출시를 신청할 수 있습니다</li>
+ <li>iOS: TestFlight로 지인 테스트</li>
+ <li>앱을 닫았다 열었을 때 알림 시각과 실제 결과가 맞는지 집중 확인</li>
+ <li>저사양 안드로이드 폰에서 20× 속도 확인</li>
+</ul></div></div>
+<div class="card phase"><div class="wk">8주~</div><div><h3>스토어 등록과 심사</h3><ul>
+ <li>스크린샷(휴대폰 크기별), 짧은 소개 문구, 아이콘, 키워드</li>
+ <li>개인정보 처리방침 페이지 (수집하는 정보가 없어도 링크가 필요합니다)</li>
+ <li>애플 개인정보 라벨, 구글 데이터 보안 양식 작성</li>
+ <li>연령 등급 설문 (IARC). 한국 출시는 스토어의 자체 등급분류로 처리됩니다</li>
+ <li>심사는 보통 며칠, 처음엔 반려될 수 있으니 1~2주 여유</li>
+</ul></div></div>
+
+<h2>4. 비용과 준비물</h2>
+<div class="tbl"><table>
+<tr><th>항목</th><th>비용</th><th>메모</th></tr>
+<tr><td>Apple Developer Program</td><td>연 $99</td><td>매년 갱신. iOS 빌드에 Mac과 Xcode가 필요하고, 없으면 클라우드 빌드 서비스를 씁니다</td></tr>
+<tr><td>Google Play Console</td><td>1회 $25</td><td>본인 인증 필요. 위의 비공개 테스트 조건</td></tr>
+<tr><td>개인정보 처리방침 호스팅</td><td>0원</td><td>GitHub Pages나 노션 공개 페이지로 충분</td></tr>
+<tr><td>사업자 등록</td><td>상황에 따라</td><td>유료 앱이나 인앱 결제로 수익을 내면 사업자 등록과 세금 신고가 필요합니다. 세무 상담 권장</td></tr>
+<tr><td>개발 환경</td><td>0원</td><td>Node.js, Android Studio, (iOS는) Xcode. 지금 이 PC에는 Node.js가 아직 없습니다</td></tr>
+</table></div>
+
+<h2>5. 돈은 어떻게 벌까</h2>
+<div class="card pick"><h3>무료 + 1회 결제로 전체 해금<span class="tag good">추천</span></h3>
+<p>예를 들어 첫 3년(게임 시간)은 무료로 하고, 4,400원 정도로 나머지와 10×·20× 속도를 엽니다. 시간을 다루는 게임이라 광고가 흐름을 끊기 쉽고, 돈을 내면 합격이 쉬워지는 구조는 이 게임의 재미를 망칩니다.</p></div>
+<ul>
+ <li><b>유료 앱(3,300~5,500원):</b> 가장 단순하지만, 무명 게임은 처음 다운로드가 크게 줄어듭니다.</li>
+ <li><b>광고:</b> "광고 보고 다음 메일까지 건너뛰기" 정도라면 어울리지만, 강제 광고는 비추천합니다.</li>
+ <li><b>추가 콘텐츠:</b> 새 직무(영업, 데이터 등)나 해외 취업 시나리오를 나중에 유료 확장으로 낼 수 있습니다.</li>
+</ul>
+
+<h2>6. 심사에서 걸리기 쉬운 것</h2>
+<div class="card"><h3>웹사이트를 감싸기만 한 앱<span class="tag warn">iOS 주의</span></h3>
+<p>애플은 웹페이지를 그대로 띄운 듯한 앱을 반려할 수 있습니다. 게임 파일을 앱 안에 넣어 인터넷 없이 돌아가게 하고, 로컬 알림과 진동처럼 앱다운 기능을 쓰면 대부분 문제없습니다.</p></div>
+<div class="card"><h3>이름과 상표<span class="tag warn">확인 필요</span></h3>
+<p>"이직각"과 게임 속 채용 포털 "오퍼로"가 이미 등록된 상표나 실제 서비스와 겹치지 않는지 특허정보검색서비스(KIPRIS)에서 확인하세요. 게임 속 회사 이름은 무작위 조합이라 실제 회사와 우연히 겹칠 수 있으니, 실존 기업명 몇 개는 금지어로 걸러 두면 안전합니다.</p></div>
+<div class="card"><h3>알림을 광고처럼 쓰기<span class="tag bad">반려 사유</span></h3>
+<p>"돌아오세요" 같은 알림은 스토어 정책 위반이 될 수 있습니다. 지금처럼 게임 속 메일 도착만 알리는 것은 괜찮습니다.</p></div>
+
+<h2>7. 출시 전 체크리스트</h2>
+<ul class="check">
+ <li>밸런스 최종 확정, 시뮬레이션 리포트 갱신</li>
+ <li>시드 난수, 세이브 버전 관리</li>
+ <li>튜토리얼, 설정, 엔딩 수집 화면</li>
+ <li>Capacitor 앱 빌드 (iOS, 안드로이드)</li>
+ <li>로컬 알림 예약과 복귀 시 결과 일치 확인</li>
+ <li>개발자 계정 2개 개설, 본인 인증</li>
+ <li>비공개 테스트 12명 × 14일</li>
+ <li>스크린샷, 소개 문구, 개인정보 처리방침</li>
+ <li>상표 검색</li>
+ <li>심사 제출</li>
+</ul>
+<p class="muted">스토어 정책과 요금은 2025년 기준입니다. 계정을 만들기 직전에 애플과 구글의 공식 안내를 한 번 더 확인하세요.</p>
+</div>
+</body>
+</html>

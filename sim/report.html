@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>이직각 시뮬레이션 리포트</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=IBM+Plex+Sans+KR:wght@400;600&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4f5f8;--surface:#fff;--ink:#141b2d;--muted:#5f6880;--line:#dde1ea;--accent:#2445d4;--soft:#e7ebfb;--bad:#c4382f;--bad-soft:#fbe6e3;--good:#16895c;--warn:#a86200;--warn-soft:#fbf0d9;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0d121d;--surface:#161d2c;--ink:#e7ebf3;--muted:#98a2b8;--line:#283149;--accent:#8ea2ff;--soft:#1f2a4d;--bad:#ff7a70;--bad-soft:#3a1c1c;--good:#45c993;--warn:#f0a43a;--warn-soft:#3a2d14;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0d121d;--surface:#161d2c;--ink:#e7ebf3;--muted:#98a2b8;--line:#283149;--accent:#8ea2ff;--soft:#1f2a4d;--bad:#ff7a70;--bad-soft:#3a1c1c;--good:#45c993;--warn:#f0a43a;--warn-soft:#3a2d14;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.65 "IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif}
+.w{max-width:860px;margin:0 auto;padding:40px 16px 80px}
+h1,h2{font-family:"Do Hyeon",sans-serif;font-weight:400;line-height:1.2;text-wrap:balance}
+h1{font-size:34px;margin:6px 0 8px}
+h2{font-size:24px;margin:44px 0 12px}
+h3{font-size:16px;margin:0 0 4px}
+.eyebrow{font-size:12px;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.lede{color:var(--muted);margin:0 0 24px}
+.num{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:20px 0}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px}
+.kpi b{display:block;font-family:"IBM Plex Mono",monospace;font-size:26px;font-weight:600}
+.kpi span{font-size:13px;color:var(--muted)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin:10px 0}
+.find{border-left:4px solid var(--bad)}
+.find.mid{border-left-color:var(--warn)}
+.find.ok{border-left-color:var(--good)}
+.find p{margin:6px 0 0}
+.tag{display:inline-block;font-size:11.5px;font-weight:600;padding:1px 8px;border-radius:99px;background:var(--bad-soft);color:var(--bad);margin-left:6px;vertical-align:2px}
+.tag.mid{background:var(--warn-soft);color:var(--warn)}
+.tag.ok{background:var(--soft);color:var(--accent)}
+.tbl{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:640px}
+th,td{padding:9px 10px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{font-size:12px;color:var(--muted);font-weight:600}
+tr:last-child td{border-bottom:0}
+td{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+td:first-child{font-family:inherit;font-weight:600}
+.hist{display:grid;grid-template-columns:44px 1fr 40px;gap:6px 10px;align-items:center;font-size:13px}
+.hist i{display:block;height:14px;background:var(--accent);border-radius:4px}
+.hist span{color:var(--muted)}
+ul,ol{padding-left:20px}
+li{margin:4px 0}
+.muted{color:var(--muted);font-size:13.5px}
+code{font-family:"IBM Plex Mono",monospace;font-size:13px;background:var(--soft);padding:1px 5px;border-radius:4px}
+</style>
+</head>
+<body>
+<div class="w">
+<div class="eyebrow">이직각 · 밸런스 점검 · 2026.11.07</div>
+<h1>봇 374명이 이직각을 끝까지 해 봤습니다</h1>
+<p class="lede">실제 게임 코드 그대로를 봇이 플레이한 결과입니다. 성향이 다른 봇 8종을 최대 20년(게임 시간)씩 돌렸습니다. 결론부터: <b>지금은 누가 어떻게 해도 클리어됩니다.</b> 게임이 망가진 건 아니지만, 긴장감을 만드는 장치들(체력, 돈, 메일, 이직 페널티)이 결과를 거의 바꾸지 못하고 있습니다.</p>
+
+<div class="kpis">
+ <div class="kpi"><b>100%</b><span>클리어율 (374판 중 374판)</span></div>
+ <div class="kpi"><b>10.6년</b><span>클리어까지 걸린 게임 시간 (중앙값)</span></div>
+ <div class="kpi"><b>79%</b><span>본인 레벨 6이 되기 전에 클리어</span></div>
+ <div class="kpi"><b>3.5년</b><span>글로벌 빅테크 첫 입사 (중앙값)</span></div>
+</div>
+
+<h2>어떻게 돌렸나</h2>
+<div class="card">
+<ul>
+ <li><b>실제 게임 파일</b>(<code>ijikgak.html</code>)에서 화면 그리기와 저장만 끄고 나머지 로직을 그대로 썼습니다. 메일 도착 시각, 결과 봉인, 면접, 휴직, 생활비 모두 실제와 같습니다.</li>
+ <li>봇은 하루에 한 번 저녁에 앱을 켭니다. 켜면 안 읽은 메일을 모두 열고, 면접에 가고, 오퍼를 고르고, 공고에 지원하고, 퇴근 후 할 일을 정합니다.</li>
+ <li>이력서에는 공고와 겹치는 키워드와 가장 잘 맞는 포트폴리오 2개를 넣습니다. 자기소개 톤과 면접 문화 질문은 리뷰 첫 줄로 회사 문화를 추측해서 답합니다. 리뷰가 맞을 확률은 72%입니다.</li>
+ <li>직무 4종(개발, 디자인, 기획, 마케팅)은 무작위로 정하고, 클리어하거나 20년이 지나면 끝냅니다.</li>
+ <li>본 실험은 5가지 성향 × 60판 = 300판입니다. 원인을 가려내기 위한 대조 실험으로 3가지 성향을 판당 24~25판, 모두 74판 더 돌렸습니다.</li>
+</ul>
+</div>
+
+<div class="tbl"><table>
+<tr><th>성향</th><th>메일 확인</th><th>지원 기준</th><th>버티는 기간</th><th>퇴근 후</th></tr>
+<tr><td>성실형</td><td>90%/일</td><td>"반반" 이상</td><td>1.5년</td><td>체력 55↑면 자기계발</td></tr>
+<tr><td>야망형</td><td>90%/일</td><td>"상향 지원"도 OK</td><td>0.5년</td><td>체력 45↑면 자기계발</td></tr>
+<tr><td>워라밸형</td><td>80%/일</td><td>"반반" 이상</td><td>2년</td><td>여유 있을 때만 · 휴직 후 퇴사</td></tr>
+<tr><td>무심형</td><td>35%/일</td><td>아무 데나</td><td>1.5년</td><td>보통 · 면접 답은 찍기</td></tr>
+<tr><td>갈아넣기형</td><td>90%/일</td><td>"반반" 이상</td><td>1.5년</td><td>체력 15만 넘으면 계속</td></tr>
+</table></div>
+
+<h2>성향별 결과</h2>
+<div class="tbl"><table>
+<tr><th>성향 (각 60판)</th><th>클리어</th><th>걸린 시간</th><th>빅테크 입사</th><th>지원</th><th>이직</th><th>1년 미만 이직</th><th>강제 휴직</th><th>권고사직</th><th>기한 놓침</th><th>5년 차 연봉</th></tr>
+<tr><td>성실형</td><td>100%</td><td>10.6년</td><td>3.2년</td><td>33</td><td>9.2</td><td>0.9</td><td>4.3</td><td>2.0</td><td>0.1</td><td>6,400</td></tr>
+<tr><td>야망형</td><td>100%</td><td><b>9.6년</b></td><td><b>2.0년</b></td><td>73</td><td>13.9</td><td><b>10.3</b></td><td>4.1</td><td>1.1</td><td>0.1</td><td><b>7,600</b></td></tr>
+<tr><td>워라밸형</td><td>100%</td><td>11.0년</td><td>4.3년</td><td>24</td><td>7.5</td><td>0.4</td><td>1.8</td><td>0.0</td><td>0.1</td><td>6,100</td></tr>
+<tr><td>무심형</td><td>100%</td><td>10.6년</td><td>5.4년</td><td>40</td><td>8.8</td><td>0.7</td><td>4.1</td><td>1.8</td><td>3.8</td><td>6,000</td></tr>
+<tr><td>갈아넣기형</td><td>100%</td><td>12.2년</td><td>4.2년</td><td>51</td><td>13.5</td><td>1.5</td><td><b>14.8</b></td><td><b>7.0</b></td><td>0.1</td><td>5,500</td></tr>
+</table></div>
+<p class="muted">시간은 모두 게임 시간 중앙값이고, 횟수는 판당 평균, 연봉 단위는 만원입니다. "기한 놓침"은 면접이나 오퍼 회신 기한이 지나 만료된 횟수입니다.</p>
+
+<h3 style="margin-top:22px">클리어까지 걸린 게임 시간 (300판)</h3>
+<div class="card hist">
+ <span>7년</span><i style="width:2.4%"></i><span class="num">2</span>
+ <span>8년</span><i style="width:26.5%"></i><span class="num">22</span>
+ <span>9년</span><i style="width:84%"></i><span class="num">70</span>
+ <span>10년</span><i style="width:100%"></i><span class="num">83</span>
+ <span>11년</span><i style="width:67%"></i><span class="num">56</span>
+ <span>12년</span><i style="width:38.5%"></i><span class="num">32</span>
+ <span>13년</span><i style="width:24%"></i><span class="num">20</span>
+ <span>14년</span><i style="width:14.5%"></i><span class="num">12</span>
+ <span>15년+</span><i style="width:3.6%"></i><span class="num">3</span>
+</div>
+
+<h2>대조 실험: 이걸 안 해도 깨지나?</h2>
+<div class="tbl"><table>
+<tr><th>성실형에서 하나만 바꿈</th><th>클리어</th><th>걸린 시간</th><th>최종 실무 스킬</th><th>기한 놓침</th><th>강제 휴직</th></tr>
+<tr><td>그대로 (기준)</td><td>100%</td><td>10.6년</td><td>100</td><td>0.1</td><td>4.3</td></tr>
+<tr><td>자기계발·사이드·휴가 전혀 안 함</td><td>100%</td><td>11.9년</td><td>92</td><td>0.2</td><td>7.3</td></tr>
+<tr><td>메일을 7일에 한 번꼴로 봄</td><td>100%</td><td>11.3년</td><td>100</td><td><b>17.1</b></td><td>3.7</td></tr>
+<tr><td>"해볼 만하다"인 곳에만 지원</td><td>100%</td><td>10.8년</td><td>100</td><td>0.1</td><td>5.7</td></tr>
+</table></div>
+<p class="muted">각 24~25판입니다. 메일을 거의 안 본 봇은 결과 메일을 끝내 열지 않은 채 기한이 지난 경우가 판당 14.5번이었는데, 그래도 고작 0.7년 늦게 클리어했습니다.</p>
+
+<h2>발견한 문제 (심각한 순)</h2>
+
+<div class="card find"><h3>1. 실패하는 길이 없다<span class="tag">핵심</span></h3>
+<p>374판이 모두 클리어했습니다. 아무 활동도 안 하는 봇, 메일을 거의 안 보는 봇, 강제 휴직을 15번 당하고 권고사직을 7번 당한 봇도 마찬가지입니다. 늦게 깬 판도 18.6년이면 깹니다. 성향 차이는 "언제 깨느냐"에서 ±1.5년 정도로만 나타납니다. 선택이 결과를 바꾸지 못하니, 이직각의 핵심인 "이 회사 갈까 말까"의 긴장이 약해집니다.</p></div>
+
+<div class="card find"><h3>2. 레벨 6이 안 돼도 클리어된다<span class="tag">버그에 가까움</span></h3>
+<p>클리어 조건은 지금 "글로벌 빅테크의 레벨 6 공고에서 오퍼를 받아 입사"뿐입니다. 본인 커리어 레벨은 확인하지 않습니다. 클리어 순간의 본인 레벨은 L6 64판, L5 230판, <b>L4 6판</b>이었습니다. 가장 빨리 깬 야망형은 경력 5.2년에 빅테크 리드(L5)로 갔고, 경력 7.1년에 클리어했습니다. 경력 년수 부족 페널티(1년 모자랄 때마다 −8)가 너무 약합니다. 커리어 트리를 ???로 바꾼 것도 이 때문에 의미가 줄어듭니다. 트리 꼭대기에 닿기 전에 게임이 끝나 버리기 때문입니다.</p></div>
+
+<div class="card find"><h3>3. 메뚜기 이직이 최적 전략이다<span class="tag">핵심</span></h3>
+<p>야망형은 1년도 안 돼 옮긴 횟수가 판당 10.3번인데도 모든 지표에서 1등입니다. 클리어가 가장 빠르고(9.6년), 빅테크 입사가 가장 빠르고(2.0년), 연봉이 가장 높고, 돈에 쪼들린 날이 가장 적습니다. 단기 이직 페널티는 −24에서 멈추는데, 실무 스킬과 최고 티어 보너스가 금방 그걸 넘어섭니다. 이직 시뮬레이션이니 이직을 잘하는 게 유리한 건 맞지만, "버틸까 옮길까"의 고민이 사라집니다.</p></div>
+
+<div class="card find"><h3>4. 빅테크가 너무 일찍 열린다<span class="tag mid">밸런스</span></h3>
+<p>첫 빅테크 입사는 전체 중앙값 3.5년, 야망형 2년입니다. 중견기업(티어 3)은 1.4년, 대기업(티어 4)은 1.9년이면 들어갑니다. 신입~주니어가 빅테크에 붙는 일이 흔해서, 티어를 하나씩 올라가는 성장감이 앞 3년에 몰려 있습니다. 그 뒤 6~7년은 같은 티어에서 레벨만 기다리는 구간이 됩니다.</p></div>
+
+<div class="card find mid"><h3>5. 스펙이 금방 꽉 찬다<span class="tag mid">밸런스</span></h3>
+<p>실무 스킬은 거의 모든 판에서 100으로 끝납니다. 자기계발을 한 번도 안 한 봇도 회사 성장만으로 92까지 갑니다. 포트폴리오는 판당 70개 이상 쌓이는데 지원할 때는 2개만 붙이니, 사이드 프로젝트를 더 해도 의미가 없습니다. 자기계발과 사이드 프로젝트를 전부 빼도 클리어가 1.2년 늦어질 뿐입니다.</p></div>
+
+<div class="card find mid"><h3>6. 체력과 휴직이 무섭지 않다<span class="tag mid">밸런스</span></h3>
+<p>신경 써서 쉬는 성실형도 87%가 강제 휴직을 한 번 이상 겪습니다(평균 4.3번). 휴직이 너무 흔한 일상이라 무게감이 떨어집니다. 반대로 갈아넣기형은 휴직 14.8번, 권고사직 7번을 겪고도 1.6년 늦게 깰 뿐입니다. 권고사직 뒤 바로 다른 곳에 붙어서, 회복 비용이 거의 없습니다.</p></div>
+
+<div class="card find mid"><h3>7. 돈은 초반에만 의미가 있다<span class="tag mid">밸런스</span></h3>
+<p>89%가 초반에 통장이 마이너스로 내려갑니다(가장 낮을 때 중앙값 −365만). 마이너스여도 체력이 하루 0.25 깎이고 엄마가 50만 원을 보내 주는 게 전부입니다. 중반 이후에는 잔고가 계속 쌓여서, 끝날 때 중앙값이 약 4억입니다. 그런데 쓸 곳이 없습니다. 통장 막대를 넣었지만 후반에는 보지 않아도 되는 숫자가 됩니다.</p></div>
+
+<div class="card find ok"><h3>8. 메일 봉인은 의도대로 작동한다<span class="tag ok">좋음</span></h3>
+<p>메일을 자주 보는 봇은 기한을 거의 놓치지 않았고(판당 0.1번), 잘 안 보는 봇은 17번 놓쳤습니다. "메일을 직접 열어야 안다"는 수고는 확실히 생겼습니다. 다만 1번 문제 때문에 놓쳐도 큰 손해가 없습니다. 기회가 넘치니 하나 놓쳐도 곧 다음 기회가 옵니다.</p></div>
+
+<h2>제안 (효과 큰 순)</h2>
+<ol>
+ <li><b>클리어 조건에 본인 레벨 6을 넣기.</b> 한 줄이면 고칠 수 있습니다: <code>a.p.level===6&amp;&amp;c.tier===5&amp;&amp;plevel()===6</code>. 경력 년수가 공고 요구보다 2년 이상 부족하면 아예 지원할 수 없게 하는 것도 함께 고려해 볼 만합니다. 그러면 커리어 트리를 ???에서 하나씩 여는 과정이 진짜 목표가 됩니다.</li>
+ <li><b>끝나는 길 만들기.</b> 예를 들어 통장 −1,000만으로 90일이 지나면 "본가로 돌아갔다" 엔딩, 권고사직 3번이면 업계 평판 엔딩, 20년이 지나면 정년 엔딩. 클리어를 이기고 지는 둘로 나누지 말고, 걸린 시간·연봉·휴직 횟수로 엔딩 등급(S~C)을 매기면 "더 잘 깨기"라는 재도전 동기가 생깁니다.</li>
+ <li><b>티어 문턱 높이기.</b> 지금 이력 중 최고 티어보다 2단계 이상 높은 회사에 지원하면 서류 통과율이 크게 깎이도록. 예: 건너뛴 단계마다 −15. 빅테크 첫 입사를 6~8년 차쯤으로 미루는 게 목표입니다.</li>
+ <li><b>단기 이직 페널티의 상한(−24) 없애기.</b> 면접 합격률에도 반영하기. "1년 미만 이직 3회 이상"이면 면접에서 그걸 묻는 질문이 나오는 식으로 보여 주면 이야기가 됩니다.</li>
+ <li><b>스펙 상승 줄이기.</b> 회사에서 오르는 실무 스킬은 지금의 절반 정도로. 포트폴리오는 오래된 것일수록 가치가 떨어지게 해서(6개월마다 완성도 −5), 사이드 프로젝트가 계속 의미 있게.</li>
+ <li><b>휴직은 드물게, 대신 아프게.</b> 체력 감소를 20% 정도 줄여서 휴직 빈도를 낮추고, 휴직 기록이 있으면 서류 통과율이 깎이게.</li>
+ <li><b>후반에 돈 쓸 곳 만들기.</b> 전세 보증금, 결혼, 부모님 병원비처럼 큰 지출 이벤트나, 연봉이 오를수록 같이 오르는 생활비.</li>
+</ol>
+
+<h2>실제로 플레이하면 얼마나 걸리나</h2>
+<div class="card">
+<p style="margin:0">클리어 중앙값 10.6년(약 3,870일)을 실제 시간으로 바꾸면 <b>20×에서 약 3.2시간</b>, 10×에서 6.5시간, 6×에서 10.8시간, 1×에서는 약 65시간입니다. 모바일에서 한 판으로 즐기기에는 꽤 깁니다. 위 제안으로 난도를 올리면 더 길어지니, 초반 3년을 빠르게 넘기는 장치를 같이 고려하면 좋습니다. 예를 들어 "다음 메일까지 건너뛰기" 버튼이 있습니다.</p>
+</div>
+
+<h2>이 실험의 한계</h2>
+<ul class="muted">
+ <li>봇은 화면의 "지원 느낌" 라벨 대신 그 뒤의 정확한 확률을 보고 지원합니다. 그래서 사람보다 지원을 잘합니다.</li>
+ <li>봇은 실수하지 않습니다. 이력서 키워드를 빼먹지 않고, 실수로 오퍼를 거절하지도 않습니다. 사람은 이보다 조금 늦게 깰 겁니다.</li>
+ <li>봇은 하루에 한 번만 앱을 켭니다. 면접 기한(7일) 안에서는 큰 차이가 없습니다.</li>
+ <li>봇이 실행 중 오류를 낸 판은 0판이었습니다. 374판, 게임 속 날짜로 약 140만 일을 처리하는 동안 게임 로직 예외는 없었습니다.</li>
+</ul>
+</div>
+</body>
+</html>
