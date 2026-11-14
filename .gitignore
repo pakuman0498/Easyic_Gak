@@ -7,3 +7,4 @@ sim/test.html
 .claude/
 # itch.io upload build
 dist/
+sim/base.html

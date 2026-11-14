@@ -44,7 +44,11 @@ function checkMail(P,st){
   for(let s=0;s<3;s++){const q=iv.qs[s];let v;
    if(q.type==='c')v='c:'+(P.smart?guessCulture(c,P):pick(G.CULT));
    else if(q.type==='h')v='h:'+(P.smart?0:G.RI(0,3));
-   else{const best=S.projects.filter(x=>x.tags.includes(q.kw)).sort((x,y)=>y.q-x.q)[0];v='p:'+(best?best.id:0);}
+   else{// only the offered portfolios can be picked; careless players pick at random
+    const ops=(q.opts||[]).map(G.proj).filter(Boolean);
+    const pool=q.opts?ops:S.projects;
+    const best=P.smart?pool.filter(x=>x.tags.includes(q.kw)).sort((x,y)=>y.q-x.q)[0]:pick(pool.slice(0,4).concat([null]));
+    v='p:'+(best?best.id:0);}
    G.answer(v);iv.react=null;iv.step++;}
   G.endInterview();G.closeSheet();st.ivScores.push(a.score);
  }}
