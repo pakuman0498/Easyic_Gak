@@ -580,7 +580,7 @@ function addMail(m,silent){
  UI.dirty=true;
  if(UI.away){if(silent)return;UI.away.n++;if(isImp(m)){UI.away.imp.push(m.subject);if(OPT.pauseImp&&UI.away.stop==null)UI.away.stop=S.day;}if(document.hidden)sysNote(m);return;}
  if(!silent)pushNote(m);
- if(!silent&&S.speed>=3&&OPT.pauseImp&&isImp(m)){UI.lastSp=S.speed;S.speed=0;UI.dirty=true;}
+ if(!silent&&S.speed>=3&&OPT.pauseImp&&needAct(m)){UI.lastSp=UI.impSp=S.speed;S.speed=0;UI.dirty=true;}
 }
 // result mails keep the outcome sealed: the board and home show only "결과 도착" until the player opens one of that application's mails
 function result(a,logText,m){addMail(m);m.log=logText;a.pend=m.id;}
@@ -1307,6 +1307,7 @@ function closeSheet(){
  $('#ov').hidden=true;$('#sheet').innerHTML='';
  if(UI.sheetHold){UI.hold--;UI.sheetHold=false;}
  UI.sheetLock=false;UI.ctx=null;UI.dirty=true;
+ autoResume();
 }
 function sheetHd(title,sub){return `<div class="sheet-hd"><div style="min-width:0">${sub?`<div class="eyebrow">${sub}</div>`:''}<h2>${title}</h2></div><button class="x" data-close>${_('닫기','Close')}</button></div>`;}
 
@@ -1379,7 +1380,7 @@ function openMail(id){
  if(m.type==='hh'&&!m.done){
   h+=`<div class="sec" style="margin-top:14px"><div class="btns"><button class="btn ghost" data-hhno="${m.id}">${_('괜찮습니다','No thanks')}</button><button class="btn" data-hhyes="${m.id}">${_('관심 있어요','I\'m interested')}</button></div></div>`;
  }
- openSheet(h);
+ openSheet(h,{hold:true});
 }
 
 /* ---------- interview ---------- */
@@ -1505,6 +1506,10 @@ const OPT=Object.assign({bg:1,bgSp:1,noti:'imp',pauseImp:1},(()=>{try{return JSO
 if(!OPT.spv){OPT.spv=2;if(OPT.bgSp>1)OPT.bgSp=2;}
 function saveOpt(){try{localStorage.setItem(SAVE+'_opt',JSON.stringify(OPT));}catch(e){}}
 const isImp=m=>!!m.type||/인사팀| HR$/.test(m.from);
+// mail with a deadline you have to answer (interview invite, offer, bill, headhunter)
+const needAct=m=>['invite','offer','bill','hh'].includes(m.type)&&!m.done;
+// after an auto-pause, resume as soon as the mail (or interview) is closed
+function autoResume(){if(!UI.impSp||!S||S.speed||ended()||!$('#ov').hidden)return;S.speed=UI.impSp;UI.impSp=0;UI.dirty=true;}
 function sysNote(m){try{if(OPT.noti==='off'||!(OPT.noti==='all'||isImp(m)))return;if('Notification' in window&&Notification.permission==='granted')new Notification(m.from,{body:m.subject,tag:'ijik'+m.id});}catch(e){}}
 // advance by wall-clock time at the background speed; stops at an important mail when that option is on
 function bgRun(ms){
@@ -1545,7 +1550,7 @@ function showSettings(){
  let h=sheetHd(_('설정','Settings'),_('이직각','Easyic-Gak'));
  h+=`<div class="sec"><div class="label"><span>${_('앱을 닫거나 다른 앱으로 가면','When you leave the app')}</span></div>${seg('bg',[[1,_('계속 진행','Keep going')],[0,_('멈춤','Pause')]])}</div>`;
  if(OPT.bg)h+=`<div class="sec"><div class="label"><span>${_('백그라운드 속도','Background speed')}</span><span>${_('1×는 하루 1분','1× = 1 min per day')}</span></div>${seg('bgSp',[[1,'1×'],[2,'20×'],[3,'60×'],[4,'180×']])}</div>
- <div class="sec"><div class="label"><span>${_('중요 메일이 오면','On important mail')}</span><span>${_('결과·면접·오퍼·인사·청구','results, interviews, offers, HR, bills')}</span></div>${seg('pauseImp',[[1,_('멈추고 기다리기','Pause and wait')],[0,_('계속 진행','Keep going')]])}</div>`;
+ <div class="sec"><div class="label"><span>${_('중요 메일이 오면','On important mail')}</span><span>${_('60×·180×에서 면접·오퍼·청구 · 닫으면 다시 진행','at 60×/180×: interviews, offers, bills · resumes when you close it')}</span></div>${seg('pauseImp',[[1,_('멈추고 기다리기','Pause and wait')],[0,_('계속 진행','Keep going')]])}</div>`;
  h+=`<div class="sec"><div class="label"><span>${_('백그라운드 메일 알림','Background notifications')}</span><span>${np}</span></div>${seg('noti',[['off',_('끔','Off')],['imp',_('중요 메일만','Important')],['all',_('모든 메일','All mail')]])}</div>`;
  h+=`<div class="sub" style="margin:4px 0 12px">${_("게임 화면에서 '정지'로 멈춰 두면 백그라운드에서도 멈춰 있습니다. 브라우저에서는 탭이 살아 있을 때만 알림이 오고, 완전히 닫았다면 다시 열 때 지난 시간만큼 한꺼번에 진행됩니다. 60×와 180×에서는 게임 화면에서도 중요 메일이 오면 멈춥니다.",'If you pause the game, it stays paused in the background too. In a browser, notifications only arrive while the tab is open; if you close it completely, the missed time is played out when you come back. At 60× and 180×, important mail pauses the game on screen too.')}</div>`;
  h+=`<div class="btns"><button class="btn ghost" data-tut>${_('튜토리얼 다시 보기','Replay tutorial')}</button><button class="btn ghost" data-reset>${_('처음부터 다시 하기','Start over')}</button></div>`;
@@ -1594,8 +1599,8 @@ document.addEventListener('click',e=>{
  if(!t){if(e.target.id==='ov'&&!UI.sheetLock)closeSheet();if(e.target.closest('#push')){const m=UI.pushMail;$('#push').classList.remove('show');if(m){UI.tab='mail';render();openMail(m);}}return;}
  const d=t.dataset;
  if(d.tab){UI.tab=d.tab;$('#main').scrollTop=0;render();return;}
- if(d.play!==undefined){if(!S)return;if(S.speed>0){UI.lastSp=S.speed;S.speed=0;}else S.speed=UI.lastSp||1;render();save();return;}
- if(d.sp!==undefined){S.speed=+d.sp;render();save();return;}
+ if(d.play!==undefined){if(!S)return;UI.impSp=0;if(S.speed>0){UI.lastSp=S.speed;S.speed=0;}else S.speed=UI.lastSp||1;render();save();return;}
+ if(d.sp!==undefined){UI.impSp=0;S.speed=+d.sp;render();save();return;}
  if(d.tut!==undefined){closeSheet();UI.tab='home';render();startTut();return;}
  if(d.go){if(d.go==='board-apps'){UI.tab='board';UI.boardSeg='apps';}else UI.tab=d.go;render();return;}
  if(d.seg){UI.boardSeg=d.seg;render();return;}
@@ -1639,7 +1644,7 @@ document.addEventListener('click',e=>{
 document.addEventListener('keydown',e=>{
  if(C)return;
  if(e.key==='Escape'&&!$('#ov').hidden&&!UI.sheetLock){closeSheet();render();}
- if(e.code==='Space'&&S&&$('#intro').hidden&&$('#ov').hidden&&!/INPUT|TEXTAREA/.test(document.activeElement.tagName)){e.preventDefault();if(S.speed>0){UI.lastSp=S.speed;S.speed=0;}else S.speed=UI.lastSp||1;render();save();}
+ if(e.code==='Space'&&S&&$('#intro').hidden&&$('#ov').hidden&&!/INPUT|TEXTAREA/.test(document.activeElement.tagName)){e.preventDefault();UI.impSp=0;if(S.speed>0){UI.lastSp=S.speed;S.speed=0;}else S.speed=UI.lastSp||1;render();save();}
 });
 
 /* ---------- tutorial ---------- */
