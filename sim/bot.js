@@ -76,9 +76,13 @@ function doActivity(P){
  const j=S.job;
  if(j){if(j.leaveUntil)return;
   if(S.hp<P.restHp&&S.leave>=3)return G.startAct('rest');
-  if(S.hp>P.actHp){const r=Math.random();return G.startAct(r<.4?'study':r<.8?'side':'network');}
+  if(S.hp>P.actHp){
+   // overtime once the job is familiar, never back to back; management bots lean on it
+   const otP=P.smart?(S.branch==='m'||P.branch==='m'?0.45:0.15):0.1;
+   if(tenure()>=180&&S.hp>P.actHp+15&&(S.otLast==null||S.day-S.otLast>=30)&&Math.random()<otP)return G.startAct('ot');
+   const r=Math.random();return G.startAct(r<.4?'study':r<.8?'side':'network');}
  }else{
-  if(S.hp<35&&S.money>=200)return G.startAct('trip');
+  if(S.hp<35)return;
   const r=Math.random();if(r<.2&&S.money>=10)return G.startAct('network');return G.startAct(r<.6?'study':'side');
  }
 }
@@ -94,7 +98,7 @@ function runOne(pk,track,maxYears){
   if(Math.random()<P.checkP){checkMail(P,st);if(!S.over){applyJobs(P,st);doActivity(P);}}
   if(S.over)break;
   if(P.quitAfterLeave&&S.job&&S.job.leaves>=1&&!S.job.leaveUntil&&S.job.wlb<=3){G.endJob('퇴사');st.quitAfterLeave++;}
-  if(G.yrs()>=3&&!S.branch)S.branch=branch;
+  if(G.yrs()>=5&&!S.branch)S.branch=branch;
   S.frac=0;
   // count expiries that happen while the result mail was never opened
   const before=S.apps.filter(a=>a.stage==='expired').length;
@@ -108,7 +112,7 @@ function runOne(pk,track,maxYears){
   if(S.day%(365*5)===0)st.salaryAt[S.day/365]=S.job?S.job.salary:0;
  }
  const exp=S.apps.filter(a=>a.stage==='expired').length;
- return {persona:pk,label:P.label,track:S.track,won:!!S.won,ending:S.over?S.over.kind:'none',grade:S.over&&S.over.grade||null,nw:Math.round(S.money+(S.homeVal||0)),life:Math.round(S.life),car:!!S.car,home:!!S.home,ev:S.ev,bills:st.bills,days:S.day,years:+(S.day/365).toFixed(2),careerYears:+(S.careerDays/365).toFixed(2),
+ return {persona:pk,label:P.label,track:S.track,won:!!S.won,wonYear:S.wonDay!=null?+(S.wonDay/365).toFixed(1):null,score:S.over?S.over.score:null,parts:S.over?S.over.parts.map(p=>p[2]):null,sgrade:S.over?S.over.grade:null,hpMax:S.hpMax||100,lead:Math.round(S.skill.lead),ending:S.over?S.over.kind:'none',grade:S.over&&S.over.grade||null,nw:Math.round(S.money+(S.homeVal||0)),life:Math.round(S.life),car:!!S.car,home:!!S.home,ev:S.ev,bills:st.bills,days:S.day,years:+(S.day/365).toFixed(2),careerYears:+(S.careerDays/365).toFixed(2),
   level:G.plevel(),maxTier:G.maxTier(),branch:S.branch,jobTier:S.job?S.job.tier:0,salary:S.job?S.job.salary:0,employed:!!S.job,
   applied:S.stats.applied,interviews:S.stats.interviews,offers:S.stats.offers,moves:S.stats.moves,leaves:S.stats.leaves,
   fired:S.history.filter(h=>h.reason==='권고사직').length,hops:G.hops(),expired:exp,neverReadExpired:st.neverReadExpired,declined:st.declined,hh:st.hh,

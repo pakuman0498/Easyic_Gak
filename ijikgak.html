@@ -500,6 +500,7 @@ function wipe(){try{localStorage.removeItem(SAVE);}catch(e){}}
 
 const T=()=>TR[S.track];
 const yrs=()=>S.careerDays/365;
+const HPM=()=>S.hpMax||100;
 const co=n=>S.companies.find(c=>c.name===n);
 const proj=id=>S.projects.find(p=>p.id===id);
 const nid=()=>S.nid++;
@@ -716,15 +717,15 @@ function acceptOffer(a){
  if(S.job){log(_(`${S.job.co}에 사직서를 냈다.`,`Handed in a resignation at ${S.job.co}.`));endJob('이직');}
  S.job={co:c.name,tier:c.tier,title:a.p.title,level:a.p.level,branch:a.p.branch,salary:a.p.salary,start:S.day,wlb:c.wlb,env:c.env,growth:c.growth,culture:c.culture,kws:a.p.kws,leaves:0,leaveUntil:0};
  if(a.p.branch&&!S.branch)S.branch=a.p.branch;
- c.known=true;a.stage='hired';S.stats.moves++;S.leave=15;
+ c.known=true;a.stage='hired';S.stats.moves++;S.leave=0;
  if(c.shady&&!c.closed){const end=S.day+RI(30,90);S.job.shady=Math.random()<0.8?'bust':'boom';S.job.owed=0;
   sched(S.day+Math.round((end-S.day)*0.45),'ceo',{co:c.name,start:S.day});sched(end,'shady',{co:c.name,start:S.day});}
- if(S.action&&S.action.type==='trip')S.action=null;
+ if(S.action&&S.action.type==='ot')S.action=null;
  const diff=(n,dv,tv)=>{const g=tv-dv;return EN?`• ${n}: reviews ${dv.toFixed(1)} → actually ${tv} ${g>=0.8?'(better than expected)':g<=-0.8?'(I got fooled…)':'(about what the reviews said)'}`:`• ${n}: 리뷰 ${dv.toFixed(1)} → 실제 ${tv}점 ${g>=0.8?'(생각보다 좋다)':g<=-0.8?'(속았다…)':'(대충 리뷰대로)'}`;};
  addMail(EN?{from:`${c.name} HR`,subject:`Welcome to ${c.name}, ${S.name}`,body:`You start today as ${a.p.title}.\n\nHow the first week actually felt:\n${diff('Work-life balance',c.dw,c.wlb)}\n${diff('Environment',c.de,c.env)}\n${diff('Growth',c.dg,c.growth)}\n\nThe culture here is all about '${CN[c.culture]}'.`}
   :{from:`${c.name} 인사팀`,subject:`${S.name}님, ${c.name}에 오신 것을 환영합니다`,body:`오늘부터 ${a.p.title}(으)로 출근합니다.\n\n첫 주를 보내며 느낀 실제 분위기:\n${diff('워라밸',c.dw,c.wlb)}\n${diff('근무환경',c.de,c.env)}\n${diff('성장',c.dg,c.growth)}\n\n사내 문화는 '${c.culture}' 중심이다.`},true);
  log(_(`${c.name}에 ${a.p.title}(으)로 입사했다.`,`Joined ${c.name} as ${a.p.title}.`));
- if(a.p.level===6&&c.tier===5&&!S.won){S.won=true;endGame('win');}
+ if(a.p.level===6&&c.tier===5&&!S.won){S.won=true;S.wonDay=S.day;log(_('글로벌 빅테크의 꼭대기에 도착했다.','Reached the top of Global Big Tech.'));summit(a);}
  else celebrate(a,prev);
  save();
 }
@@ -762,6 +763,13 @@ function fireworks(dur,big){
  requestAnimationFrame(step);
  try{navigator.vibrate&&navigator.vibrate(big?[40,60,40,60,120]:[30,50,30]);}catch(e){}
 }
+function summit(a){
+ const c=co(a.p.co),left=Math.max(0,(LIMD-S.day)/365);
+ openSheet(`<div class="cele"><div class="cele-stamp">${_('정상 도착','THE TOP')}</div><h2>${esc(c.name)}</h2><div class="ct">${esc(a.p.title)}</div>
+  <div class="mbody" style="text-align:center;margin-top:10px">${EN?`${esc(S.name)}, who once struggled to land a single entry-level job,\nhas reached the top of Global Big Tech.\n\nYou still have ${left.toFixed(1)} years until retirement.\nThe earlier you got here, the bigger the bonus. Keep stacking salary and savings.`:`신입 공고 하나 뚫는 것도 버거웠던 ${esc(S.name)}님이\n글로벌 빅테크의 꼭대기에 도착했습니다.\n\n정년까지 ${left.toFixed(1)}년 남았어요.\n일찍 도착할수록 보너스가 커요. 남은 시간 동안 연봉과 자산을 더 쌓아 보세요.`}</div></div>
+  <div class="btns" style="margin-top:16px"><button class="btn" data-close>${_('계속 다니기','Keep working')}</button></div>`,{center:true,hold:true});
+ fireworks(6500,true);
+}
 function celebrate(a,prev){
  const c=co(a.p.co),sal=a.p.salary,n=S.history.length+1;
  let up='';
@@ -782,20 +790,25 @@ const ACTS=EN?{
  side:{name:'Side project',days:21,desc:j=>`21 days · HP -${j?20:7} · Portfolio +1`,hp:j=>j?20:7},
  network:{name:'Networking',days:3,desc:j=>`3 days · HP -${j?4:2} · ${MW(10)} · Teamwork↑, intel`,hp:j=>j?4:2},
  rest:{name:'Take PTO',days:3,desc:()=>`3 days · 3 PTO days · HP +24`,hp:()=>-24},
- trip:{name:'Vacation',days:5,desc:()=>`5 days · ${MW(60)} · HP +30`,hp:()=>-30}
+ ot:{name:'Overtime',days:5,desc:()=>`5 days · HP -${otHp()} · Leadership↑${otFam()<1?' (still new to the job)':''}`,hp:()=>otHp()}
 }:{
  study:{name:'자기계발',days:10,desc:j=>`10일 · 체력 -${j?14:5} · 실무↑, 새 키워드`,hp:j=>j?14:5},
  side:{name:'사이드 프로젝트',days:21,desc:j=>`21일 · 체력 -${j?20:7} · 포트폴리오 +1`,hp:j=>j?20:7},
  network:{name:'네트워킹',days:3,desc:j=>`3일 · 체력 -${j?4:2} · 10만원 · 협업↑, 정보`,hp:j=>j?4:2},
  rest:{name:'연차 휴가',days:3,desc:()=>`3일 · 연차 3개 · 체력 +24`,hp:()=>-24},
- trip:{name:'여행',days:5,desc:()=>`5일 · 60만원 · 체력 +30`,hp:()=>-30}
+ ot:{name:'야근',days:5,desc:()=>`5일 · 체력 -${otHp()} · 리더십↑${otFam()<1?' (아직 일이 낯설다)':''}`,hp:()=>otHp()}
 };
+// overtime: leadership comes from knowing the job, so it pays off only after ~6 months there,
+// and back-to-back overtime (within 30 days) costs more and more HP
+function otN(){return S.otLast!=null&&S.day-S.otLast<30?(S.otN||0)+1:0;}
+function otFam(){const j=S.job;return j?Math.min(1,(S.day-j.start)/180):0;}
+function otHp(){const j=S.job;if(!j)return 0;return Math.round(16*(1+otN()*0.5)*(1+(3-j.wlb)*0.15));}
 function startAct(type){
  const A=ACTS[type],j=!!S.job;
  if(type==='rest'){if(S.leave<3)return;S.leave-=3;}
- if(type==='trip')S.money-=60;
  if(type==='network')S.money-=10;
- S.action={type,start:S.day,end:S.day+A.days,per:A.hp(j)/A.days};
+ const hp=A.hp(j);if(type==='ot')S.otN=otN();
+ S.action={type,start:S.day,end:S.day+A.days,per:hp/A.days};
  log(_(`${A.name} 시작.`,`Started: ${A.name}.`));UI.dirty=true;save();
 }
 function finishAct(){
@@ -821,8 +834,11 @@ function finishAct(){
     :{from:'대학 선배',subject:`${c.name} 얘기 들었어?`,body:`어제 커피 고마웠어.\n말한 ${c.name} 말인데, 거기 다니는 친구 말로는\n워라밸 ${c.wlb}점, 근무환경 ${c.env}점, 성장 ${c.growth}점 정도래.\n분위기는 완전 '${c.culture}' 쪽이고.${c.shady?'\n\n근데 거기 요즘 월급 밀린다는 소문이 있더라. 연봉만 보고 가지 마.':''}\n\n참고만 해!`});}
   }else if(r<0.55&&yrs()>=1)headhunter();
   log(_('네트워킹을 했다. 아는 사람이 늘었다.','Did some networking. You know more people now.'));
+ }else if(a.type==='ot'){
+  const j=S.job;S.otLast=S.day;
+  if(j){const f=otFam(),d=3.2*f*(0.6+j.growth*0.15)*(1+k.collab/100)*(S.branch==='m'?1.3:1)*Math.pow(Math.max(0,1-k.lead/110),1.3);k.lead+=d;
+   log(f<1?_(`야근을 마쳤다. 아직 일이 낯설어 남는 게 적다. (리더십 +${d.toFixed(1)})`,`Finished the overtime. Still new here, so not much stuck. (Leadership +${d.toFixed(1)})`):_(`야근을 마쳤다. 일이 손에 익는다. (리더십 +${d.toFixed(1)})`,`Finished the overtime. The work is starting to feel like yours. (Leadership +${d.toFixed(1)})`));}
  }else if(a.type==='rest')log(_('연차를 쓰고 푹 쉬었다.','Took PTO and rested well.'));
- else if(a.type==='trip')log(_('여행에서 돌아왔다. 머리가 맑다.','Back from vacation. Head feels clear.'));
  UI.dirty=true;
 }
 
@@ -861,18 +877,12 @@ function lifeEvents(){
  if(!S.home&&S.day>=730&&!S.ev[rk]){S.ev[rk]=1;const x=Math.round((800+S.life*4)/100)*100;
   bill(EN?{from:'Landlord',subject:'[Lease] Renewal notice',body:`Your lease is ending soon.\nPrices have gone up a lot, so I'll need another ${MW(x)} on the deposit.\n\nIf that's hard, you're free to look elsewhere.\n(Moving to a smaller place costs moving fees and tires you out, but lowers living costs.)`,opts:[{label:'Pay the increase',money:-x},{label:'Move somewhere smaller',money:-150,hp:-8,fx:'small'}],def:1}
    :{from:'집주인',subject:'[전세] 계약 갱신 안내',body:`계약 만료가 다가와 연락드립니다.\n요즘 시세가 많이 올라서 보증금을 ${x.toLocaleString()}만원 올려 주셔야 할 것 같아요.\n\n어려우시면 다른 집을 알아보셔도 됩니다.\n(작은 집으로 옮기면 이사비가 들고 지치지만, 생활비가 줄어듭니다.)`,opts:[{label:'올려 준다',money:-x},{label:'작은 집으로 이사',money:-150,hp:-8,fx:'small'}],def:1});return;}
- if(j&&!S.ev.car&&y>=2&&Math.random()<0.04){S.ev.car=1;
-  bill(EN?{from:'Work buddies group chat',subject:'Everyone got a car, huh',body:'One by one, your friends from work bought cars.\nBeing able to drive anywhere on weekends would be less tiring, for sure.\n\n(A car increases weekend HP recovery.)',opts:[{label:'Buy a mid-size car',money:-2800,fx:'car'},{label:'Public transit for now',money:0}],def:1}
-   :{from:'입사 동기 단톡방',subject:'다들 차 뽑았더라',body:'동기들이 하나둘 차를 샀다.\n주말에 어디든 갈 수 있으면 확실히 덜 지치긴 하겠지.\n\n(차가 있으면 주말 체력 회복이 늘어납니다.)',opts:[{label:'중형차 계약',money:-2800,fx:'car'},{label:'아직은 대중교통',money:0}],def:1});return;}
  if(j&&!S.ev.wed&&y>=4&&Math.random()<0.03){S.ev.wed=1;
   bill(EN?{from:'Partner',subject:'Should we set a date?',body:'We\'ve been together a long time.\nLet\'s decide together: a big wedding, or something small, just us.\n\n(Living together raises living costs a little.)',opts:[{label:'Big wedding',money:-3000,hp:12,fx:'wed'},{label:'Small wedding',money:-800,hp:6,fx:'wed'}],def:1}
    :{from:'연인',subject:'우리 이제 날 잡을까?',body:'만난 지도 꽤 됐잖아.\n식을 크게 할지, 둘이서 조촐하게 할지 같이 정하자.\n\n(둘이 살면 생활비가 조금 늘어납니다.)',opts:[{label:'식 올리기',money:-3000,hp:12,fx:'wed'},{label:'스몰웨딩',money:-800,hp:6,fx:'wed'}],def:1});return;}
  if(y>=3&&(S.ev.hosp||0)<3&&Math.random()<0.015){S.ev.hosp=(S.ev.hosp||0)+1;const x=RI(4,12)*100;
   bill(EN?{from:'Mom',subject:'Dad is in the hospital',body:`Don't panic.\nDad's test results weren't good, so he's been admitted.\nThey say the bill will be about ${MW(x)}.\n\nI'm sorry to put this on you.`,opts:[{label:'Send all of it',money:-x},{label:'Send half',money:-Math.round(x/2),hp:-10}],def:0}
    :{from:'엄마',subject:'아빠가 입원하셨다',body:`놀라지 말고 들어라.\n아빠 검사 결과가 안 좋아서 입원하셨다.\n병원비가 ${x.toLocaleString()}만원쯤 나온다는구나.\n\n너한테 이런 말 해서 미안하다.`,opts:[{label:'전부 보낸다',money:-x},{label:'반만 보낸다',money:-Math.round(x/2),hp:-10}],def:0});return;}
- if(!S.home&&!S.ev.apt&&S.money>=15000&&Math.random()<0.1){S.ev.apt=1;const x=Math.round(S.money*0.7/100)*100;
-  bill(EN?{from:'Housing Lottery',subject:'[Lottery] Congratulations, you won',body:`You won the apartment lottery you entered.\nThe down payment and installments come to ${MW(x)}.\n\n(Owning a home ends lease renewals and lowers living costs. Its value counts toward your net worth.)`,opts:[{label:'Sign the contract',money:-x,fx:'home'},{label:'Pass',money:0}],def:1}
-   :{from:'청약홈',subject:'[청약] 당첨을 축하드립니다',body:`신청하신 아파트 청약에 당첨되었습니다.\n계약금과 중도금으로 ${x.toLocaleString()}만원이 필요합니다.\n\n(내 집이 생기면 전세 갱신이 사라지고 생활비가 줄어듭니다. 집값은 순자산에 포함됩니다.)`,opts:[{label:'계약한다',money:-x,fx:'home'},{label:'포기한다',money:0}],def:1});}
 }
 
 /* ---------- daily tick ---------- */
@@ -886,6 +896,7 @@ function tick(){
    onLeave=true;S.hp+=1.6;S.blankDays++;
    if(S.day>=j.leaveUntil){
     j.leaveUntil=0;
+    if(S.stats.leaves>=6){endGame('health');return;}
     if(j.leaves>=2){const n=j.co;endJob('권고사직');addMail(EN?{from:`${n} HR`,subject:'About our meeting',body:'Following your two leaves of absence, here is the outcome of our review.\n\nFor the sake of your health, the company has decided to end your contract.\nThank you for all your work.'}:{from:`${n} 인사팀`,subject:'면담 결과 안내',body:'두 차례 휴직 이후 면담 결과를 안내드립니다.\n\n회사는 귀하의 건강을 위해 계약을 종료하는 것이 맞다고 판단했습니다.\n그동안 수고 많으셨습니다.'});log(_(`${n}에서 권고사직 처리됐다.`,`Pushed out of ${n} ("encouraged to resign").`));if(!S.over&&S.history.filter(h=>h.reason==='권고사직').length>=3)endGame('rep');}
     else{addMail(EN?{from:`${j.co} HR`,subject:'Return to work',body:'Your leave has ended.\nPlease come back to work starting tomorrow.\n\nTake it easy. If you collapse again, there won\'t be much we can do.'}:{from:`${j.co} 인사팀`,subject:'복직 안내',body:'휴직 기간이 종료되었습니다.\n내일부터 정상 출근 바랍니다.\n\n무리하지 마세요. 한 번 더 쓰러지면 회사도 어쩔 수 없습니다.'});log(_('휴직이 끝나 복직했다.','Leave ended. Back to work.'));}
    }
@@ -893,14 +904,16 @@ function tick(){
    S.careerDays++;S.blankDays=Math.max(0,S.blankDays-0.3);
    const ten=(S.day-j.start)/365;
    const resting=S.action&&S.action.type==='rest';
-   const drain=(weekend||resting)?0:(0.4+(5-j.wlb)*0.4)*(1+ten*0.15)*0.8;
+   // a new job wears you out more; after ~2 years you've settled in
+   const drain=(weekend||resting)?0:(0.4+(5-j.wlb)*0.4)*(1.1-Math.min(0.3,ten*0.15))*0.8;
    const regen=weekend?j.env*0.9+(S.car?1:0):j.env*0.04;
    S.hp+=regen-drain;
-   const g=j.growth;
-   k.prac+=0.012*g*(1-k.prac/140);
-   k.collab+=0.008*g*(1-k.collab/140);
-   k.lead+=(j.level>=3?0.008*g*(S.branch==='m'?1.6:0.7):0.0015*g)*(1-k.lead/140);
+   const g=j.growth,acc=1+Math.min(0.5,ten*0.25);
+   k.prac+=0.012*g*acc*(1-k.prac/140);
+   k.collab+=0.008*g*acc*(1-k.collab/140);
+   k.lead+=0.0015*g*(1-k.lead/140);
    const td=S.day-j.start;
+   if(td%30===0&&td<365)S.leave++;
    if(td%30===0){const full=Math.round(j.salary/12*0.82);
     if(j.shady==='bust'){const pay=Math.round(full*0.5);S.money+=pay;j.owed+=full-pay;
      addMail(EN?{from:`${j.co} Finance`,subject:'[Notice] About this month\'s payroll',body:`Due to company circumstances, we are paying only 50% of this month's salary for now.\nThe rest will be paid as soon as the investment comes in.\n\nThank you for understanding.\n\n(Unpaid wages so far: ${MW(j.owed)})`}
@@ -930,6 +943,9 @@ function tick(){
     S.hp=0;j.leaves++;S.stats.leaves++;j.leaveUntil=S.day+45;S.action=null;(S.leaveLog=S.leaveLog||[]).push(S.day);
     addMail(EN?{from:`${j.co} HR`,subject:'[HR] Leave of absence',body:`For health reasons, ${S.name} is placed on leave for 45 days starting today.\n\nLeave does not count as work experience.\nThe leave stays on your record for resume screens for 3 years.\nGet some real rest.`}:{from:`${j.co} 인사팀`,subject:'[인사] 휴직 발령 안내',body:`${S.name}님은 건강상의 이유로 오늘부로 45일간 휴직 처리됩니다.\n\n휴직 기간은 경력으로 인정되지 않습니다.\n휴직 이력은 3년 동안 서류 심사에 남습니다.\n푹 쉬고 돌아오세요.`});
     log(_('과로로 쓰러졌다. 45일간 강제 휴직.','Collapsed from overwork. Forced leave for 45 days.'));
+    // every collapse leaves a mark: max HP drops, and the fifth one ends the career
+    S.hpMax=Math.max(40,HPM()-10);log(_(`몸이 예전 같지 않다. 최대 체력 ${S.hpMax}.`,`Your body isn't what it used to be. Max HP ${S.hpMax}.`));
+    if(S.stats.leaves===5)sched(S.day+3,'mail',{m:EN?{from:'Dr. Han, Family Clinic',subject:'About your test results',body:'This is your fifth collapse.\nI\'ll be blunt: one more and your body won\'t bounce back.\n\nPlease, slow down.'}:{from:'한내과 주치의',subject:'검사 결과 관련해서',body:'벌써 다섯 번째입니다.\n솔직히 말씀드리면, 한 번 더 쓰러지면 몸이 회복하지 못할 수 있어요.\n\n제발 속도를 늦추세요.'}});
    }
   }
  }else{S.hp+=0.8;S.blankDays++;}
@@ -938,13 +954,13 @@ function tick(){
  if(!S.over){
   S.debtDays=S.money<=-1000?(S.debtDays||0)+1:0;
   if(S.debtDays===30)addMail(EN?{from:'Saesol Bank',subject:'[Overdue] Overdraft limit exceeded',body:`Your balance has been below -${MW(1000)} for a month.\nIf this lasts two more months, you won't be able to hold on.`}:{from:'새솔은행',subject:'[연체] 마이너스 통장 한도 초과 안내',body:'잔고가 -1,000만원 아래로 내려간 지 한 달이 되었습니다.\n이대로 두 달이 더 지나면 더는 버티기 어렵습니다.'});
-  if(S.debtDays>=90)endGame('home');else if(S.day>=7300)endGame('retire');
+  if(S.debtDays>=90)endGame('home');else if(S.day>=LIMD)endGame('retire');
  }
- S.hp=clamp(S.hp,0,100);
+ S.hp=clamp(S.hp,0,HPM());
  for(const key in k)k[key]=clamp(k[key],0,100);
 
  if(S.action&&!onLeave){
-  S.hp=clamp(S.hp-S.action.per,0,100);
+  S.hp=clamp(S.hp-S.action.per,0,HPM());
   if(S.day>=S.action.end)finishAct();
  }
  runDue();
@@ -960,7 +976,7 @@ function tick(){
 
  const pl=plevel();
  if(pl>S.lastPL){S.lastPL=pl;log(_(`커리어 레벨 상승: ${LV[pl-1]} (${titleOf(pl,S.branch)})`,`Career level up: ${LV[pl-1]} (${titleOf(pl,S.branch)})`));}
- if(yrs()>=3&&!S.branch&&!S.branchAsked){S.branchAsked=true;setTimeout(showBranch,50);}
+ if(yrs()>=5&&!S.branch&&!S.branchAsked){S.branchAsked=true;setTimeout(showBranch,50);}
  if(S.day%3===0)save();
 }
 
@@ -1060,7 +1076,7 @@ const ICON_PAUSE='<svg viewBox="0 0 16 16"><rect x="3" y="2" width="3.6" height=
 function renderHeader(){
  const mins=Math.floor((S.frac||0)*1440);
  $('#hDate').innerHTML=`<b>${fmtD(S.day)}</b> (${WD[dateOf(S.day).getDay()]}) <span class="clock">${String(Math.floor(mins/60)).padStart(2,'0')}:${String(mins%60).padStart(2,'0')}</span>`;
- const hp=Math.round(S.hp);$('#hpBar').style.width=hp+'%';$('#hpNum').textContent=hp;
+ const hp=Math.round(S.hp);$('#hpBar').style.width=hp+'%';$('#hpNum').textContent=hp+(HPM()<100?'/'+HPM():'');
  $('#hpWrap').className='bar'+(hp<25?' low':hp<55?' mid':'');
  const m=$('#hMoney');m.textContent='₩'+won(S.money);m.classList.toggle('neg',S.money<0);
  // bank gauge = months of living cost covered (full at 6 months)
@@ -1101,6 +1117,7 @@ function moodOf(){
  if(hp<40)return [_('지침','Worn out'),_('다크서클이 턱까지 내려왔다.','Dark circles down to the chin.'),'warn'];
  if(S.money<0)return [_('돈 걱정','Money worries'),_('통장이 마이너스다…','The account is in the red…'),'warn'];
  if(S.action&&(S.action.type==='trip'||S.action.type==='rest'))return [_('휴가 중','On break'),_('아무 생각도 안 하는 중.','Thinking about absolutely nothing.'),'good'];
+ if(S.action&&S.action.type==='ot')return [_('야근 중','Working late'),_('오늘도 막차 타고 퇴근이다.','Catching the last train home again.'),'warn'];
  if(j&&S.day-j.start<7)return [_('설렘','Excited'),_('새 회사 첫 주. 다 신기하다.','First week at the new place. Everything is new.'),'good'];
  if(hp<70)return [_('보통','Okay'),_('그럭저럭 버틸 만하다.','Getting by.'),''];
  return [_('쌩쌩','Energized'),_('오늘은 뭐든 할 수 있을 것 같다.','Feels like you could do anything today.'),'good'];
@@ -1196,10 +1213,10 @@ function renderHome(){
  if(j){
   h+=EN?`<section class="card"><div class="eyebrow">Current job · ${TIER[j.tier]}</div><h2>${esc(j.co)}</h2><div class="sub">${esc(j.title)} · <span class="num">${MW(j.salary)}</span>/yr · ${S.leave} PTO days left</div>
   <div class="meters">${meter('Balance',j.wlb,5)}${meter('Env.',j.env,5)}${meter('Growth',j.growth,5)}</div>
-  <div class="sub" style="margin-top:8px">Lower work-life balance drains HP faster on weekdays, and more the longer you stay. Environment sets weekend recovery; growth sets how fast your skills rise.</div></section>`
+  <div class="sub" style="margin-top:8px">Lower work-life balance drains HP faster on weekdays. The longer you stay, the less it wears you down and the faster you grow. Environment sets weekend recovery; growth sets how fast your skills rise.</div></section>`
   :`<section class="card"><div class="eyebrow">지금 다니는 곳 · ${TIER[j.tier]}</div><h2>${esc(j.co)}</h2><div class="sub">${esc(j.title)} · 연봉 <span class="num">${j.salary.toLocaleString()}</span>만원 · 연차 ${S.leave}일 남음</div>
   <div class="meters">${meter('워라밸',j.wlb,5)}${meter('근무환경',j.env,5)}${meter('성장',j.growth,5)}</div>
-  <div class="sub" style="margin-top:8px">워라밸이 낮을수록 평일 체력이 빨리 닳고, 오래 다닐수록 더 닳습니다. 근무환경은 주말 회복량, 성장은 스펙 상승 속도를 정합니다.</div></section>`;
+  <div class="sub" style="margin-top:8px">워라밸이 낮을수록 평일 체력이 빨리 닳습니다. 오래 다닐수록 덜 지치고 스펙도 빨리 오릅니다. 근무환경은 주말 회복량, 성장은 스펙 상승 속도를 정합니다.</div></section>`;
  }else{
   h+=EN?`<section class="card"><div class="eyebrow">Job hunting</div><h2>${S.careerDays?'Looking for the next job':'Looking for a first job'}</h2><div class="sub">Gap <span class="num" id="blankLive">${Math.round(S.blankDays)}</span> days${S.blankDays>60?' · the gap is hurting your resume':''} · living costs ₩${won(Math.round(S.life||160))}/month</div></section>`
   :`<section class="card"><div class="eyebrow">구직 중</div><h2>${S.careerDays?'다음 회사를 찾는 중':'첫 직장을 찾는 중'}</h2><div class="sub">공백 <span class="num" id="blankLive">${Math.round(S.blankDays)}</span>일${S.blankDays>60?' · 공백이 서류에 불리하게 작용하는 중':''} · 생활비 월 ${won(Math.round(S.life||160))}원</div></section>`;
@@ -1211,8 +1228,8 @@ function renderHome(){
   const A=ACTS[S.action.type],tot=S.action.end-S.action.start,dn=S.day-S.action.start;
   h+=`<div class="progress"><div class="row between"><b>${A.name}</b><span class="sub num" id="actLeft">${S.action.end-S.day}${_('일 남음','d left')}</span></div><div class="bar"><i id="actBar" style="width:${dn/tot*100}%"></i></div></div>`;
  }else{
-  const list=j?['study','side','network','rest']:['study','side','network','trip'];
-  h+=`<div class="acts">${list.map(t=>{const A=ACTS[t];const dis=(t==='rest'&&S.leave<3)||(t==='trip'&&S.money<60);return `<button class="act" data-act="${t}"${dis?' disabled':''}><b>${A.name}</b><small>${A.desc(!!j)}</small></button>`;}).join('')}
+  const list=j?['study','side','network','ot','rest']:['study','side','network'];
+  h+=`<div class="acts">${list.map(t=>{const A=ACTS[t];const dis=t==='rest'&&S.leave<3;return `<button class="act" data-act="${t}"${dis?' disabled':''}><b>${A.name}</b><small>${A.desc(!!j)}</small></button>`;}).join('')}
   ${j?`<button class="act danger" data-quit style="grid-column:1/-1"><b>${_('퇴사하기','Quit')}</b><small>${_('바로 구직 상태가 된다. 다음 회사가 정해지기 전이라면 공백이 생긴다.','You go straight back to job hunting. Without a next job lined up, a gap starts.')}</small></button>`:''}</div>`;
  }
  h+=`</section>`;
@@ -1262,16 +1279,16 @@ function renderMail(){
 }
 function treq(L,br){return EN?`${L===1?'entry postings':`${REQY[L-1]}+ yrs`}${L===4?' · Skill 35+':''}${L===5?(br==='m'?' · Leadership 35+':' · Skill 60+'):''}${L===6?(br==='m'?' · Leadership 60+':' · Skill 80+'):''}`:`${L===1?'신입 공고부터':`경력 ${REQY[L-1]}년+`}${L===4?' · 실무 35+':''}${L===5?(br==='m'?' · 리더십 35+':' · 실무 60+'):''}${L===6?(br==='m'?' · 리더십 60+':' · 실무 80+'):''}`;}
 function tnode(L,title,pl,br){const got=L<=pl&&(L<5||S.branch===br);const now=got&&(L===pl);
- if(!got){const next=L===pl+1&&(L<5||!S.branch||S.branch===br);return `<div class="tnode lock"><div class="pip">?</div><div class="tt">???<small>${next?`${_('다음 단계','Next')} · ${treq(L,br)}`:_('아직 가보지 못한 곳','Not reached yet')}</small></div></div>`;}
+ if(!got){const next=L===pl+1&&(L<5||!S.branch||S.branch===br);return `<div class="tnode lock"><div class="pip">?</div><div class="tt">???<small>${L>=5&&!S.branchAsked?_('갈림길에서 공개','Revealed at the crossroads'):next?`${_('다음 단계','Next')} · ${treq(L,br)}`:_('아직 가보지 못한 곳','Not reached yet')}</small></div></div>`;}
  return `<div class="tnode${got?' got':''}${now?' now':''}"><div class="pip">${L}</div><div class="tt">${esc(title)}<small>${LV[L-1]} · ${treq(L,br)}</small></div></div>`;}
 // history reasons stay Korean inside the save
 const RSN=_({},{이직:'moved on',퇴사:'quit',폐업:'company closed',권고사직:'pushed out'});
 function renderMe(){
  const t=T(),pl=plevel(),k=S.skill;
- let h=`<section class="card"><div class="eyebrow">${EN?`${t.name} career tree`:`${t.name} 커리어 트리`}</div><h2>${esc(S.name)} · ${esc(titleOf(pl,S.branch))}</h2><div class="sub">${EN?`Exp. ${dur(S.careerDays)} · total gap ${Math.round(S.blankDays)}d · ${Math.max(0,S.stats.moves-1)} job changes`:`경력 ${dur(S.careerDays)} · 누적 공백 ${Math.round(S.blankDays)}일 · 이직 ${Math.max(0,S.stats.moves-1)}회`}</div><div class="tree">`;
+ let h=`<section class="card"><div class="eyebrow">${EN?`${t.name} career tree`:`${t.name} 커리어 트리`}</div><h2>${esc(S.name)} · ${esc(titleOf(pl,S.branch))}</h2><div class="sub">${EN?`Exp. ${dur(S.careerDays)} · total gap ${Math.round(S.blankDays)}d · ${Math.max(0,S.stats.moves-1)} job changes · ${Math.max(0,(LIMD-S.day)/365).toFixed(1)} yrs to retirement`:`경력 ${dur(S.careerDays)} · 누적 공백 ${Math.round(S.blankDays)}일 · 이직 ${Math.max(0,S.stats.moves-1)}회 · 정년까지 ${Math.max(0,(LIMD-S.day)/365).toFixed(1)}년`}</div><div class="tree">`;
  for(let L=1;L<=4;L++){h+=tnode(L,t.t[L-1],pl);h+='<div class="tline"></div>';}
  h+=`<div class="split"><div class="branch ${S.branch==='ic'?'pick':S.branch?'off':''}"><h4>${_('스페셜리스트','Specialist')}</h4>${tnode(5,t.ic[0],pl,'ic')}${tnode(6,t.ic[1],pl,'ic')}</div><div class="branch ${S.branch==='m'?'pick':S.branch?'off':''}"><h4>${_('매니지먼트','Management')}</h4>${tnode(5,t.m[0],pl,'m')}${tnode(6,t.m[1],pl,'m')}</div></div>`;
- h+=`</div><div class="sub" style="margin-top:8px">${S.branch?'':_('경력 3년이 되면 갈림길을 고르게 됩니다. ','At 3 years of experience you pick a path. ')}${_('레벨은 경력과 스펙으로 오르고, 직함은 회사가 줍니다. 목표: 글로벌 빅테크의 레벨 6.','Your level rises with experience and skills; your title comes from the company. Goal: level 6 at Global Big Tech.')}</div></section>`;
+ h+=`</div><div class="sub" style="margin-top:8px">${S.branch?'':_('경력 5년이 되면 갈림길이 나타납니다. ','At 5 years of experience you reach a crossroads. ')}${_('레벨은 경력과 스펙으로 오르고, 직함은 회사가 줍니다. 목표: 글로벌 빅테크의 레벨 6.','Your level rises with experience and skills; your title comes from the company. Goal: level 6 at Global Big Tech.')}</div></section>`;
  h+=`<section class="card"><h3>${_('스펙','Skills')}</h3><div class="meters">${meter(_('실무','Skill'),k.prac,100)}${meter(_('협업','Teamwork'),k.collab,100)}${meter(_('리더십','Leader'),k.lead,100)}</div></section>`;
  h+=`<section class="card"><h3>${_('이력서 키워드','Resume keywords')}</h3><div class="chips" style="margin-top:8px">${myKws().map(x=>`<span class="chip">#${esc(x)}</span>`).join('')}</div></section>`;
  h+=`<section class="card"><h3>${_('포트폴리오','Portfolio')} <span class="sub">${S.projects.length}</span></h3><div class="projpick" style="margin-top:8px">${S.projects.slice(0,12).map(p=>`<div class="proj"><div class="row between"><b>${esc(p.name)}</b><span class="num sub">${p.q}</span></div><div class="chips">${p.tags.map(x=>`<span class="chip">#${esc(x)}</span>`).join('')}</div></div>`).join('')}</div></section>`;
@@ -1444,14 +1461,14 @@ function endInterview(){
 function showBranch(){
  if(S.branch)return;
  const t=T();
- openSheet(EN?`<div class="sheet-hd"><div><div class="eyebrow">3 years in · career crossroads</div><h2>Which way?</h2></div></div>
+ openSheet(EN?`<div class="sheet-hd"><div><div class="eyebrow">5 years in · career crossroads</div><h2>Which way?</h2></div></div>
  <div class="sub" style="margin-bottom:12px">From level 5 the paths split. The skill you pick becomes your promotion requirement, and it changes how fast you build leadership at work.</div>
  <div class="stack"><button class="track" data-branch="ic"><b>Specialist</b><small>${t.ic[0]} → ${t.ic[1]}<br>Reach the top through craft. Needs Skill 60/80.</small></button>
- <button class="track" data-branch="m"><b>Management</b><small>${t.m[0]} → ${t.m[1]}<br>Reach the top by leading people. Needs Leadership 35/60.</small></button></div>`
- :`<div class="sheet-hd"><div><div class="eyebrow">경력 3년 차 · 커리어 갈림길</div><h2>어느 쪽으로 갈까?</h2></div></div>
+ <button class="track" data-branch="m"><b>Management</b><small>${t.m[0]} → ${t.m[1]}<br>Reach the top by leading people. Needs Leadership 35/60.<br>Leadership builds up through overtime, once you know the job.</small></button></div>`
+ :`<div class="sheet-hd"><div><div class="eyebrow">경력 5년 차 · 커리어 갈림길</div><h2>어느 쪽으로 갈까?</h2></div></div>
  <div class="sub" style="margin-bottom:12px">레벨 5부터 길이 갈립니다. 고른 쪽 스펙이 승진 조건이 되고, 회사 생활에서 리더십이 쌓이는 속도도 달라집니다.</div>
  <div class="stack"><button class="track" data-branch="ic"><b>스페셜리스트</b><small>${t.ic[0]} → ${t.ic[1]}<br>실무 실력으로 정상에. 실무 60/80 필요.</small></button>
- <button class="track" data-branch="m"><b>매니지먼트</b><small>${t.m[0]} → ${t.m[1]}<br>사람을 이끌어 정상에. 리더십 35/60 필요.</small></button></div>`,{center:true,hold:true,lock:true});
+ <button class="track" data-branch="m"><b>매니지먼트</b><small>${t.m[0]} → ${t.m[1]}<br>사람을 이끌어 정상에. 리더십 35/60 필요.<br>리더십은 일이 손에 익은 뒤 야근으로 쌓여요.</small></button></div>`,{center:true,hold:true,lock:true});
 }
 function showConfirmQuit(){
  openSheet(`<div class="sheet-hd"><div><div class="eyebrow">${esc(S.job.co)}</div><h2>${_('정말 퇴사할까요?','Really quit?')}</h2></div></div><div class="sub" style="margin-bottom:14px">${_('다음 회사가 정해지지 않았다면 오늘부터 공백이 쌓이고, 월급이 끊깁니다.','Without a next job, your gap starts today and your paycheck stops.')}</div><div class="btns"><button class="btn ghost" data-close>${_('조금 더 버틴다','Hang in there')}</button><button class="btn bad" data-quitok>${_('사직서 제출','Resign')}</button></div>`,{center:true});
@@ -1459,45 +1476,57 @@ function showConfirmQuit(){
 function showConfirmReset(){
  openSheet(`<div class="sheet-hd"><div><h2>${_('처음부터 다시 할까요?','Start over?')}</h2></div></div><div class="sub" style="margin-bottom:14px">${_('지금까지의 커리어가 모두 사라집니다.','Your whole career so far will be gone.')}</div><div class="btns"><button class="btn ghost" data-close>${_('취소','Cancel')}</button><button class="btn bad" data-resetok>${_('새로 시작','Start over')}</button></div>`,{center:true});
 }
-const ENDS=_({win:['빅테크 엔딩','정상에 도착했다'],retire:['정년 엔딩','20년을 버텼다'],home:['본가 엔딩','본가로 돌아갔다'],rep:['평판 엔딩','업계에 소문이 났다']},
- {win:['Big Tech ending','Made it to the top'],retire:['Retirement ending','Lasted 20 years'],home:['Back-home ending','Moved back home'],rep:['Reputation ending','Word got around']});
-const ended=()=>!!(S&&S.over&&S.over.kind!=='win');
+// one career lasts LIMY years; the score is what you built in that time
+const LIMY=15,LIMD=365*LIMY;
+const ENDS=_({retire:['정년 엔딩',`${LIMY}년을 버텼다`],health:['건강 엔딩','몸이 먼저 멈췄다'],home:['본가 엔딩','본가로 돌아갔다'],rep:['평판 엔딩','업계에 소문이 났다']},
+ {retire:['Retirement ending',`Lasted ${LIMY} years`],health:['Health ending','Your body called it'],home:['Back-home ending','Moved back home'],rep:['Reputation ending','Word got around']});
+const ended=()=>!!(S&&S.over);
+// grade cutoffs, tuned with the bots
+const GRADES=[['S',6000],['A',5300],['B',3000]];
+function peakJob(){let b=null;S.history.concat(S.job?[S.job]:[]).forEach(x=>{const v=x.level*150+x.tier*100;if(!b||v>b.v)b={v,x};});return b;}
 function gradeOf(){
- const y=S.day/365,nw=S.money+(S.homeVal||0),lv=S.stats.leaves,hp=hops();
- const parts=[[_('걸린 시간','Time taken'),_(`${y.toFixed(1)}년`,`${y.toFixed(1)} yrs`),y<=9?3:y<=10.5?2:y<=12.5?1:0,3],[_('강제 휴직','Forced leaves'),_(`${lv}회`,`${lv}`),lv===0?2:lv<=2?1:0,2],[_('순자산','Net worth'),EN?'₩'+won(nw):won(nw)+'원',nw>=25000?2:nw>=12000?1:0,2],[_('1년 미만 이직','Jobs under 1 yr'),_(`${hp}회`,`${hp}`),hp<=1?1:0,1]];
+ const nw=S.money+(S.homeVal||0),lv=S.stats.leaves,pk=peakJob();
+ const ps=Math.max(0,S.job?S.job.salary:0,...S.history.map(h=>h.salary||0));
+ const fm=v=>EN?'₩'+won(v):won(v)+'원',top=S.wonDay!=null,left=top?Math.max(0,LIMD-S.wonDay)/365:0;
+ const parts=[
+  [_('최고 커리어','Peak role'),pk?`${TIER[pk.x.tier]} · ${LV[pk.x.level-1]}`:_('없음','None'),pk?pk.v:0],
+  [_('최고 연봉','Peak salary'),fm(ps),Math.round(ps/20)],
+  [_('순자산','Net worth'),fm(nw),Math.round(Math.max(-500,nw/50))],
+  [_('정상 도착','Reached the top'),top?_(`${(S.wonDay/365).toFixed(1)}년 차`,`Year ${(S.wonDay/365).toFixed(1)}`):'—',top?800+Math.round(left*250):0],
+  [_('강제 휴직','Forced leaves'),_(`${lv}회`,`${lv}`),lv?-lv*150:0]];
  const score=parts.reduce((a,x)=>a+x[2],0);
- return {grade:score>=7?'S':score>=5?'A':score>=3?'B':'C',score,parts};
+ return {grade:(GRADES.find(g=>score>=g[1])||['C'])[0],score,parts};
 }
 function endGame(kind){
- const o={kind,day:S.day,nw:Math.round(S.money+(S.homeVal||0))};
- if(kind==='win')Object.assign(o,gradeOf());
+ if(S.over)return;
+ const o=Object.assign({kind,day:S.day,nw:Math.round(S.money+(S.homeVal||0))},gradeOf());
  S.over=o;S.speed=0;
  if(UI.away&&UI.away.stop==null)UI.away.stop=S.day;
- try{const r=JSON.parse(localStorage.getItem(SAVE+'_end')||'{}');if(kind!=='win'||!r.win||'CBAS'.indexOf(o.grade)>'CBAS'.indexOf(r.win))r[kind]=kind==='win'?o.grade:1;localStorage.setItem(SAVE+'_end',JSON.stringify(r));}catch(e){}
+ try{const r=JSON.parse(localStorage.getItem(SAVE+'_end')||'{}');r[kind]=1;if(!r.best||o.score>r.best){r.best=o.score;r.bestG=o.grade;o.best=true;}localStorage.setItem(SAVE+'_end',JSON.stringify(r));}catch(e){}
  log(`${ENDS[kind][0]}: ${ENDS[kind][1]}.`);
  save();setTimeout(showEnding,600);
 }
 function showEnding(){
- const o=S.over,j=S.job,E=ENDS[o.kind],win=o.kind==='win';
- const txt=EN?{win:`${S.name}, who once struggled to land a single entry-level job,\nhas reached the top of Global Big Tech.`,
-  retire:`20 years have passed.\nYou never reached the top, but you wrap up your career ${j?`as ${j.title} at ${j.co}`:'still job hunting'}.\nHighest you got: ${TIER[maxTier()]||'none'} · ${LV[plevel()-1]}`,
+ const o=S.over,j=S.job,E=ENDS[o.kind]||ENDS.retire,top=S.wonDay!=null;
+ const txt=EN?{retire:top?`${LIMY} years have passed.\nYou made it to the top of Global Big Tech and kept going.\nYou wrap up your career ${j?`as ${j.title} at ${j.co}`:'between jobs'}.`:`${LIMY} years have passed.\nYou never reached the very top, but you wrap up your career ${j?`as ${j.title} at ${j.co}`:'still job hunting'}.\nHighest you got: ${TIER[maxTier()]||'none'} · ${LV[plevel()-1]}`,
+  health:`Your sixth forced leave.\nThe doctor didn't sugarcoat it: your body can't take this anymore.\nYou step away from your career for good.`,
   home:`After three months below -${MW(1000)},\nyou finally packed up and moved back home.\nMom didn't ask a thing. She just made you dinner.`,
-  rep:`Pushed out for the third time.\nThe industry was smaller than you thought.\nNot even headhunters call anymore.`}[o.kind]:{win:`신입 공고 하나 뚫는 것도 버거웠던 ${S.name}님이\n글로벌 빅테크의 꼭대기에 도착했습니다.`,
-  retire:`20년이 흘렀습니다.\n꼭대기에는 닿지 못했지만, ${j?`${j.co}의 ${j.title}(으)로`:'구직 중인 채로'} 커리어를 마무리합니다.\n가장 높이 가 본 곳: ${TIER[maxTier()]||'없음'} · ${LV[plevel()-1]}`,
+  rep:`Pushed out for the third time.\nThe industry was smaller than you thought.\nNot even headhunters call anymore.`}[o.kind]:{retire:top?`${LIMY}년이 흘렀습니다.\n글로벌 빅테크의 꼭대기를 찍고도 멈추지 않았고,\n${j?`${j.co}의 ${j.title}(으)로`:'잠시 쉬는 중에'} 커리어를 마무리합니다.`:`${LIMY}년이 흘렀습니다.\n꼭대기에는 닿지 못했지만, ${j?`${j.co}의 ${j.title}(으)로`:'구직 중인 채로'} 커리어를 마무리합니다.\n가장 높이 가 본 곳: ${TIER[maxTier()]||'없음'} · ${LV[plevel()-1]}`,
+  health:`여섯 번째 강제 휴직.\n의사는 돌려 말하지 않았습니다. 몸이 더는 버티지 못한다고.\n커리어를 여기서 내려놓습니다.`,
   home:`잔고 -1,000만원으로 석 달을 버티다\n결국 짐을 싸서 본가로 내려갔습니다.\n엄마는 아무것도 묻지 않고 밥을 차려 주셨습니다.`,
   rep:`세 번째 권고사직.\n업계는 생각보다 좁았습니다.\n이제 헤드헌터의 연락도 오지 않습니다.`}[o.kind];
  const st=EN?`• ${S.stats.applied} applications · ${S.stats.interviews} interviews · ${S.stats.offers} offers\n• ${S.history.length+(j?1:0)} companies · ${S.stats.leaves} forced leaves\n• Net worth ₩${won(o.nw)}`:`• 지원 ${S.stats.applied}회 · 면접 ${S.stats.interviews}회 · 최종 합격 ${S.stats.offers}회\n• 거쳐 간 회사 ${S.history.length+(j?1:0)}곳 · 강제 휴직 ${S.stats.leaves}회\n• 순자산 ${won(o.nw)}원`;
- let h=`<div class="sheet-hd"><div style="min-width:0"><div class="eyebrow">${E[0]} · ${fmtD(o.day)} · ${(o.day/365).toFixed(1)}${_('년',' yrs')}</div><h2>${win?(EN?`${esc(j.title)}, ${esc(j.co)}`:`${esc(j.co)}의 ${esc(j.title)}`):E[1]}</h2></div>${win?`<div class="grade g${o.grade}">${o.grade}</div>`:''}</div>`;
+ let h=`<div class="sheet-hd"><div style="min-width:0"><div class="eyebrow">${E[0]} · ${fmtD(o.day)} · ${(o.day/365).toFixed(1)}${_('년',' yrs')}</div><h2>${E[1]}</h2></div><div class="grade g${o.grade}">${o.grade}</div></div>`;
  h+=`<div class="mbody">${esc(txt)}\n\n${esc(st)}</div>`;
- if(win)h+=`<div class="sec" style="margin-top:12px"><div class="label"><span>${_('등급 채점','Grade')}</span><span>${o.score} / 8${_('점',' pts')}</span></div><div class="gparts">${o.parts.map(x=>`<div><span>${x[0]}</span><b>${esc(x[1])}</b><em>${x[2]}/${x[3]}</em></div>`).join('')}</div><div class="sub" style="margin-top:6px">${_('S 7점+ · A 5점+ · B 3점+ · 나머지 C','S 7+ · A 5+ · B 3+ · otherwise C')}</div></div>`;
- h+=`<div class="btns" style="margin-top:14px">${win?`<button class="btn ghost" data-close>${_('계속 다니기','Keep working')}</button>`:''}<button class="btn" data-resetok>${_('새 커리어 시작','New career')}</button></div>`;
+ h+=`<div class="sec" style="margin-top:12px"><div class="label"><span>${_('스코어','Score')}</span><span>${o.score.toLocaleString()}${_('점',' pts')}${o.best?_(' · 최고 기록!',' · New best!'):''}</span></div><div class="gparts">${o.parts.map(x=>`<div><span>${x[0]}</span><b>${esc(x[1])}</b><em>${x[2]>0?'+':''}${x[2].toLocaleString()}</em></div>`).join('')}</div><div class="sub" style="margin-top:6px">${GRADES.map(g=>`${g[0]} ${g[1].toLocaleString()}+`).join(' · ')} · ${_('나머지 C','otherwise C')}</div></div>`;
+ h+=`<div class="btns" style="margin-top:14px"><button class="btn" data-resetok>${_('새 커리어 시작','New career')}</button></div>`;
  openSheet(h,{center:true,hold:true,lock:true});
- if(win)fireworks(6500,true);
+ if(o.grade==='S'||o.grade==='A')fireworks(o.grade==='S'?6500:3400,o.grade==='S');
 }
 function endRec(){
  let r={};try{r=JSON.parse(localStorage.getItem(SAVE+'_end')||'{}');}catch(e){}
- const ks=Object.keys(ENDS),n=ks.filter(k=>r[k]).length;if(!n)return '';
- return `<div class="field"><span class="label">${_('엔딩','Endings')} ${n} / ${ks.length}</span><div class="chips">${ks.map(k=>`<span class="chip${r[k]?' on':''}">${r[k]?ENDS[k][0]+(k==='win'?' · '+r[k]:''):'???'}</span>`).join('')}</div></div>`;
+ const ks=Object.keys(ENDS),n=ks.filter(k=>r[k]).length;if(!n&&!r.best)return '';
+ return `<div class="field"><span class="label">${_('엔딩','Endings')} ${n} / ${ks.length}${r.best?` · ${_('최고 스코어','Best score')} ${r.best.toLocaleString()} (${r.bestG})`:''}</span><div class="chips">${ks.map(k=>`<span class="chip${r[k]?' on':''}">${r[k]?ENDS[k][0]:'???'}</span>`).join('')}</div></div>`;
 }
 
 /* ---------- settings & background ---------- */
@@ -1582,7 +1611,7 @@ function showIntro(){
   ${saved&&saved.v===1?`<button class="btn block" data-continue>${_('이어하기','Continue')} · ${esc(saved.name)} (${fmtD(saved.day)})${(saved.lang||'ko')!==LANG?((saved.lang||'ko')==='en'?' · English':' · 한국어'):''}</button>`:''}
   <div class="field"><label class="label" for="nm">${_('이름','Name')}</label><input id="nm" maxlength="${EN?12:8}" placeholder="${_('예: 김구직','e.g. Jamie')}" value="${esc(UI.nm||'')}"></div>
   <div class="field"><span class="label">${_('직무','Track')}</span><div class="tracks">${Object.entries(TR).map(([k,t])=>`<button class="track${UI.pickTrack===k?' on':''}" data-track="${k}"><b>${t.name}</b><small>${t.desc}</small></button>`).join('')}</div></div>
-  ${EN?`<ul class="rules"><li>At 1×, one in-game day is one real minute; 20× is 3 s and 180× is a third of a second. You can pause anytime up top.</li><li>You never know when a result mail will arrive. It might never come.</li><li>Work-life balance sets HP drain, environment sets recovery, growth sets how fast skills rise.</li><li>Hit 0 HP and you're put on forced leave. That leaves a gap, and the leave stays on your record for 3 years.</li><li>There's more than one way to end. Going broke, getting pushed out too often, or 20 years passing also ends the game.</li></ul>`:`<ul class="rules"><li>1×에서 하루는 1분, 20×는 3초, 180×는 0.3초입니다. 위쪽에서 언제든 멈출 수 있어요.</li><li>결과 메일은 언제 올지 모릅니다. 끝내 안 올 수도 있어요.</li><li>워라밸은 체력 소모, 근무환경은 회복, 성장은 스펙 상승을 정합니다.</li><li>체력이 0이 되면 강제 휴직. 공백기가 생기고, 휴직 이력은 3년간 서류에 남습니다.</li><li>끝나는 길은 하나가 아닙니다. 빈털터리가 되거나 권고사직이 쌓이거나 20년이 지나도 끝나요.</li></ul>`}
+  ${EN?`<ul class="rules"><li>At 1×, one in-game day is one real minute; 20× is 3 s and 180× is a third of a second. You can pause anytime up top.</li><li>You never know when a result mail will arrive. It might never come.</li><li>Work-life balance sets HP drain, environment sets recovery, growth sets how fast skills rise.</li><li>Hit 0 HP and you're put on forced leave. That leaves a gap, and the leave stays on your record for 3 years.</li><li>A career lasts 15 years. How high you climb and how much you build in that time becomes your score.</li><li>It can end early too: going broke, getting pushed out three times, or collapsing too many times.</li></ul>`:`<ul class="rules"><li>1×에서 하루는 1분, 20×는 3초, 180×는 0.3초입니다. 위쪽에서 언제든 멈출 수 있어요.</li><li>결과 메일은 언제 올지 모릅니다. 끝내 안 올 수도 있어요.</li><li>워라밸은 체력 소모, 근무환경은 회복, 성장은 스펙 상승을 정합니다.</li><li>체력이 0이 되면 강제 휴직. 공백기가 생기고, 휴직 이력은 3년간 서류에 남습니다.</li><li>커리어는 15년. 그동안 얼마나 높이 오르고 얼마나 쌓았는지가 스코어가 됩니다.</li><li>일찍 끝날 수도 있어요. 빈털터리가 되거나, 권고사직을 세 번 당하거나, 너무 여러 번 쓰러지면요.</li></ul>`}
   <button class="btn block" data-start>${saved?_('새로 시작하기','New game'):_('구직 시작','Start job hunting')}</button>
  </div>`;
 }
@@ -1639,7 +1668,7 @@ document.addEventListener('click',e=>{
  if(d.lang){try{localStorage.setItem(SAVE+'_lang',d.lang);}catch(e){}if(d.lang!==LANG)location.reload();return;}
  if(d.track){UI.nm=$('#nm').value;UI.pickTrack=d.track;showIntro();return;}
  if(d.start!==undefined){startFromIntro();return;}
- if(d.continue!==undefined){const sv=load();if(sv&&(sv.lang||'ko')!==LANG){try{localStorage.setItem(SAVE+'_lang',sv.lang||'ko');sessionStorage.setItem(SAVE+'_cont','1');}catch(e){}location.reload();return;}S=load();if(!S.spv){S.spv=2;if(S.speed>1)S.speed=2;}if(S.life==null)S.life=160;S.ev=S.ev||{};S.leaveLog=S.leaveLog||[];$('#intro').hidden=true;UI.tab='home';render();if(ended())showEnding();else offline();return;}
+ if(d.continue!==undefined){const sv=load();if(sv&&(sv.lang||'ko')!==LANG){try{localStorage.setItem(SAVE+'_lang',sv.lang||'ko');sessionStorage.setItem(SAVE+'_cont','1');}catch(e){}location.reload();return;}S=load();if(!S.spv){S.spv=2;if(S.speed>1)S.speed=2;}if(S.action&&!ACTS[S.action.type])S.action=null;if(S.over&&!S.over.parts){if(S.over.kind==='win'){S.over=null;if(S.wonDay==null)S.wonDay=S.day;}else Object.assign(S.over,gradeOf());}if(S.life==null)S.life=160;S.ev=S.ev||{};S.leaveLog=S.leaveLog||[];$('#intro').hidden=true;UI.tab='home';render();if(ended())showEnding();else offline();return;}
 });
 document.addEventListener('keydown',e=>{
  if(C)return;
@@ -1665,7 +1694,7 @@ const TUT_EN=[
  {t:'#tabs [data-tab="home"]',h:'While you wait',b:'Just waiting would be a waste.',wait:'tab:home',do:'Tap the Home tab'},
  {t:'#main .acts',h:'Build your skills',b:'Self-study → new keywords\nSide project → portfolio\nNetworking → inside info on companies\nWhile employed these happen after work, so they cost more HP.'},
  {t:'#main .hero',h:'Do this now',b:'Not sure what to do? Look at the top card.\nIt always shows the most urgent thing.'},
- {t:'#tabs [data-tab="me"]',h:'Career',b:'Your level, keywords, portfolio and history are in the Career tab.\nThe goal is level 6 at Global Big Tech.'},
+ {t:'#tabs [data-tab="me"]',h:'Career',b:'Your level, keywords, portfolio and history are in the Career tab.\nYou have 15 years. The higher you climb and the more you build, the higher your score.\nThe very top is level 6 at Global Big Tech.'},
  {t:'.timebar',h:'Off you go!',b:'Pick a speed and let time flow.\nSettings and the tutorial replay are at the bottom of Home.',wait:'sp',do:'Tap a speed'}
 ];
 const TUT=EN?TUT_EN:[
@@ -1684,7 +1713,7 @@ const TUT=EN?TUT_EN:[
  {t:'#tabs [data-tab="home"]',h:'기다리는 동안',b:'그냥 기다리기만 하면 아깝죠.',wait:'tab:home',do:'홈 탭을 눌러 보세요'},
  {t:'#main .acts',h:'스펙 키우기',b:'자기계발 → 새 키워드\n사이드 프로젝트 → 포트폴리오\n네트워킹 → 회사 내부 정보\n회사에 다니면 퇴근 후에 하는 거라 체력이 더 들어요.'},
  {t:'#main .hero',h:'지금 할 일',b:'뭘 해야 할지 모르겠으면 맨 위 카드를 보세요.\n가장 급한 일을 알려줘요.'},
- {t:'#tabs [data-tab="me"]',h:'커리어',b:'레벨, 키워드, 포트폴리오, 경력은 커리어 탭에서 볼 수 있어요.\n목표는 글로벌 빅테크의 레벨 6이에요.'},
+ {t:'#tabs [data-tab="me"]',h:'커리어',b:'레벨, 키워드, 포트폴리오, 경력은 커리어 탭에서 볼 수 있어요.\n커리어는 15년. 높이 오르고 많이 쌓을수록 스코어가 올라요.\n정상은 글로벌 빅테크의 레벨 6이에요.'},
  {t:'.timebar',h:'이제 시작!',b:'속도를 골라 시간을 흘려보내세요.\n설정과 튜토리얼 다시 보기는 홈 맨 아래에 있어요.',wait:'sp',do:'원하는 속도를 눌러 보세요'}
 ];
 let C=null;

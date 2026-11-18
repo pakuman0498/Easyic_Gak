@@ -11,6 +11,7 @@ rep("function pushNote(m){", "function pushNote(m){return;")
 rep("setTimeout(showBranch,50)", "0")
 rep("setTimeout(showEnding,600)", "0")
 rep("function celebrate(a,prev){", "function celebrate(a,prev){return;")
+rep("function summit(a){", "function summit(a){return;")
 rep("document.addEventListener('visibilitychange',onVis);", "")
 rep("setInterval(loop,100);", "")
 rep("showIntro();\n",
